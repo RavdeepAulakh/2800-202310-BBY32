@@ -2,7 +2,7 @@ import pandas as pb
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
 
@@ -38,14 +38,18 @@ def main():
     print(y)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-    model = LinearRegression()
+    model = DecisionTreeRegressor()
     model.fit(x_train, y_train)
 
     predicted_values = model.predict(x_test)
-    print("\n\nPredicted Values: ")
-    print(predicted_values)
-    print(y_test)
-    print(x_test)
+    # print("\n\nPredicted Values: ")
+    # print(predicted_values)
+    # print(y_test)
+    # print(x_test)
+
+    results = pd.DataFrame({'Actual': y_test, 'Predicted': predicted_values})
+    print("\n\nResults:")
+    print(results.head(10))
 
 
 if __name__ == '__main__':

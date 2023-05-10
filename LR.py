@@ -2,9 +2,10 @@ import pandas as pb
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
+from datetime import datetime
 
 
 def main():
@@ -27,7 +28,15 @@ def main():
     x['type'] = encoder.fit_transform(x['type'].astype(str))
     x['paint_color'] = encoder.fit_transform(x['paint_color'].astype(str))
     x['state'] = encoder.fit_transform(x['state'].astype(str))
-    x['posting_date'] = encoder.fit_transform(x['posting_date'].astype(str))
+
+    x = x.dropna(subset=['posting_date'])
+
+    print("\nDebug:")
+    print(x['posting_date'].head())  # before conversion
+    x['posting_date'] = pd.to_datetime(x['posting_date'], format='%Y-%m-%dT%H:%M:%S%z', utc=True)
+    print(x['posting_date'].head())  # after conversion
+    x['year'] = x['posting_date'].dt.year
+    x = x.drop(columns=['posting_date'])
     imputer = SimpleImputer(strategy='mean')
     x = imputer.fit_transform(x)
     y = data['price']
@@ -38,7 +47,7 @@ def main():
     print(y)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-    model = DecisionTreeRegressor()
+    model = DecisionTreeClassifier()
     model.fit(x_train, y_train)
 
     predicted_values = model.predict(x_test)

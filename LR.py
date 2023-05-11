@@ -10,6 +10,7 @@ from datetime import datetime
 
 def main():
     data = pb.read_csv('vehicles.csv')
+    data = data.dropna(subset=['posting_date', 'price'])
     print("\nData: ")
     print(data)
     # x is the input set, y is the output set
@@ -29,14 +30,13 @@ def main():
     x['paint_color'] = encoder.fit_transform(x['paint_color'].astype(str))
     x['state'] = encoder.fit_transform(x['state'].astype(str))
 
-    x = x.dropna(subset=['posting_date'])
-
-    print("\nDebug:")
-    print(x['posting_date'].head())  # before conversion
-    x['posting_date'] = pd.to_datetime(x['posting_date'], format='%Y-%m-%dT%H:%M:%S%z', utc=True)
-    print(x['posting_date'].head())  # after conversion
-    x['year'] = x['posting_date'].dt.year
-    x = x.drop(columns=['posting_date'])
+    x['posting_date'] = encoder.fit_transform(x['posting_date'].astype(str))
+    # print("\nDebug:")
+    # print(x['posting_date'].head())  # before conversion
+    # x['posting_date'] = pd.to_datetime(x['posting_date'], format='%Y-%m-%dT%H:%M:%S%z', utc=True)
+    # print(x['posting_date'].head())  # after conversion
+    # x['year'] = x['posting_date'].dt.year
+    # x = x.drop(columns=['posting_date'])
     imputer = SimpleImputer(strategy='mean')
     x = imputer.fit_transform(x)
     y = data['price']
@@ -46,8 +46,8 @@ def main():
     print("\nY: ")
     print(y)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-    model = DecisionTreeClassifier()
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
+    model = DecisionTreeRegressor()
     model.fit(x_train, y_train)
 
     predicted_values = model.predict(x_test)
@@ -58,7 +58,7 @@ def main():
 
     results = pd.DataFrame({'Actual': y_test, 'Predicted': predicted_values})
     print("\n\nResults:")
-    print(results.head(10))
+    print(results.head(30))
 
 
 if __name__ == '__main__':

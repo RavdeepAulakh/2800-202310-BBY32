@@ -1,3 +1,4 @@
+import joblib
 import pandas as pb
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -12,6 +13,7 @@ from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
 def main():
     # headers = id,url,region,region_url,price,year,manufacturer,model,condition,cylinders,fuel,odometer,title_status,transmission,VIN,drive,size,type,paint_color,image_url,description,county,state,lat,long,posting_date
+    # used headers = region,year,manufacturer,model,condition,cylinders,fuel,odometer,title_status,transmission,drive,size,type,paint_color,state,posting_date
     data = pb.read_csv('vehicles.csv')
     data = data.dropna(subset=['posting_date', 'price', 'odometer'])
     data = data.loc[(data['price'] >= 1000) & (data['price'] <= 100000)]
@@ -55,7 +57,7 @@ def main():
     print("\nY: ")
     print(y)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.05)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
     model = DecisionTreeRegressor()
     model.fit(x_train, y_train)
 
@@ -79,6 +81,8 @@ def main():
     print(f'Mean Absolute Error: {mae:.2f}')
     print(f'Mean Squared Error: {mse:.2f}')
     print(f'Root Mean Squared Error: {rmse:.2f}')
+
+    # joblib.dump(model, 'price_prediction.joblib')
 
 
 if __name__ == '__main__':

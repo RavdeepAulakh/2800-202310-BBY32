@@ -47,7 +47,7 @@ const database = require("./databaseConnection.js");
 const userCollection = database.db(MONGODB_DATABASE).collection('users');
 
 app.use(express.urlencoded({extended: false}));
-app.use(express.static(__dirname + "/../views"));
+app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + "/../public"));
 
 var mongoStore = MongoStore.create({

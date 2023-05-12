@@ -16,45 +16,46 @@ KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
       rel="stylesheet"
       href="https://unpkg.com/tailwindcss@2.2.15/dist/tailwind.min.css"
     />
-    <style>
-      nav {
-        background-image: linear-gradient(to bottom right, #8b0000, #191970);
-      }
-      .nav-link {
-        color: #fff;
-      }
-      .nav-link:hover {
-        color: #dcdcdc;
-      }
-    </style>
   </head>
-  <body>
-    <nav>
-      <header
-        class="d-flex flex-wrap justify-content-center py-3 border-bottom"
-      >
-        <a
-          href="/"
-          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none text-white"
-        >
-          <svg class="bi me-2" width="40" height="32">
-            <use xlink:href="#bootstrap"></use>
-          </svg>
-          <span class="fs-4">Simple header</span>
-        </a>
 
-        <ul class="nav nav-pills">
-          <li class="nav-item">
-            <a href="/" class="nav-link" aria-current="page">Home</a>
-          </li>
-          <li class="nav-item">
-            <a href="/loggedin" class="nav-link">Members</a>
-          </li>
-          <li class="nav-item"><a href="/login" class="nav-link">Login</a></li>
-          <li class="nav-item"><a href="/admin" class="nav-link">Admin</a></li>
-          <li class="nav-item"><a href="/about" class="nav-link">About</a></li>
-        </ul>
-      </header>
-    </nav>
-  </body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/loggedin" style="padding-left: 10px;">Cargain</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-toggle="collapse"
+      data-target="#navbarNavAltMarkup"
+      aria-controls="navbarNavAltMarkup"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-item nav-link active" href="/loggedin"
+          >Home <span class="sr-only">(current)</span></a
+        >
+        <a class="nav-item nav-link" href="/createUser">Sign up</a>
+        <!-- <a class="nav-item nav-link" href="#">Pricing</a> -->
+        <a class="nav-item nav-link" href="/logout">Sign out</a>
+      </div>
+    </div>
+  </nav>
+
+  <script
+    src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"
+  ></script>
 </html>

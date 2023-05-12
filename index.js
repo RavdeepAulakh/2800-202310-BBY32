@@ -119,7 +119,7 @@ app.get('/', (req,res) => {
     const user = await userCollection.findOne({ email: email });
   
     if (!user) {
-      return res.send('Error: No user found with email ' + email);
+      return res.render("passwordResetEmailFail");
     }
   
     const token = crypto.randomBytes(20).toString('hex');
@@ -144,7 +144,7 @@ app.get('/', (req,res) => {
         return res.send('Error sending email.');
       }
       console.log('Email sent: ' + info.response);
-      res.send('Password reset instructions sent to ' + email);
+      res.render("passwordResetEmailSent");
     });
   });
 
@@ -153,7 +153,7 @@ app.get('/', (req,res) => {
     const user = await userCollection.findOne({ passwordResetToken: token });
   
     if (!user) {
-      return res.send('Error: Invalid or expired token.');
+      return res.render("tokenExpired");
     }
   
     res.render('ActualResetPage', { token: token });
@@ -175,7 +175,7 @@ app.get('/', (req,res) => {
       { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
     );
   
-    res.send('Password reset successful.');
+    res.render("passwordResetSuccess");
   });
   
   

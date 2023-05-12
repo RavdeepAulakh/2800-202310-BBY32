@@ -1,41 +1,27 @@
-<%- include("templates/header") %> 
-<h1>Hello, <%= user %>!</h1>
-<div class="row">
-    <div class="col-md-4">
-        <div id="cat-gif-1"></div>
-    </div>
-    <div class="col-md-4">
-        <div id="cat-gif-2"></div>
-    </div>
-    <div class="col-md-4">
-        <div id="cat-gif-3"></div>
-    </div>
+<%- include("templates/header") %>
+
+<div class="flex flex-col items-center justify-center h-screen">
+  <h1 class="text-4xl font-bold mb-8">Welcome to Cargain!</h1>
+  <!-- <img src="/public/logo.png" alt="Cargain logo" class="mb-8"> -->
+  <div class="grid grid-cols-2 gap-4">
+    <a href="#" class="bg-white rounded-lg shadow-md p-8">
+      <h2 class="text-2xl font-bold mb-4">Find a Car</h2>
+      <p class="text-gray-600">Answer some questions about yourself and find the right car for you!</p>
+    </a>
+    <a href="#" class="bg-white rounded-lg shadow-md p-8">
+      <h2 class="text-2xl font-bold mb-4">Sell or Buy a Car</h2>
+      <p class="text-gray-600">Enter details of a car and figure out what its what worth.</p>
+    </a>
+    <a href="#" class="bg-white rounded-lg shadow-md p-8">
+      <h2 class="text-2xl font-bold mb-4">Profile</h2>
+      <p class="text-gray-600">View your Settings and Prefences.</p>
+    </a>
+    <a href="#" class="bg-white rounded-lg shadow-md p-8">
+      <h2 class="text-2xl font-bold mb-4">My Garage</h2>
+      <p class="text-gray-600">View and change the car you have saved to the website to check price of.</p>
+    </a>
+  </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-axios.get('/cat/1')
-    .then(function (response) {
-        document.getElementById('cat-gif-1').innerHTML = response.data;
-    })
-    .catch(function (error) {
-        console.log(error);
-    });
 
-axios.get('/cat/2')
-    .then(function (response) {
-        document.getElementById('cat-gif-2').innerHTML = response.data;
-    })
-    .catch(function (error) {
-        console.log(error);
-    });
-
-axios.get('/cat/3')
-    .then(function (response) {
-        document.getElementById('cat-gif-3').innerHTML = response.data;
-    })
-    .catch(function (error) {
-        console.log(error);
-    });
-</script>
-<a class="btn btn-primary rounded-pill px-3" href="/logout">Sign out</a>
 <%- include("templates/footer") %>
+

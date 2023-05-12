@@ -129,7 +129,7 @@ app.get('/', (req,res) => {
       { $set: { passwordResetToken: token } }
     );
   
-    const resetLink = `http://localhost:3000/protected-reset?token=${token}`;
+    const resetLink = `https://2800-202310-bby-32.vercel.app/protected-reset?token=${token}`;
     const mailOptions = {
       from: 'vravdeep@gmail.com',
       to: email,

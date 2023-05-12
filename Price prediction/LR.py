@@ -1,6 +1,5 @@
 import joblib
 import pandas as pb
-import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
@@ -18,7 +17,7 @@ def main():
     data = data.dropna(subset=['posting_date', 'price', 'odometer'])
     data = data.loc[(data['price'] >= 1000) & (data['price'] <= 100000)]
     data = data.loc[(data['odometer'] >= 1000)]
-    data['posting_date'] = pd.to_datetime(data['posting_date'], format='%Y-%m-%dT%H:%M:%S%z', utc=True)
+    data['posting_date'] = pb.to_datetime(data['posting_date'], format='%Y-%m-%dT%H:%M:%S%z', utc=True)
     data['year'] = data['posting_date'].dt.year
     data['month'] = data['posting_date'].dt.month
     data = data.drop(columns=['posting_date'])

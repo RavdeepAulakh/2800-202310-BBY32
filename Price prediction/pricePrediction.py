@@ -6,7 +6,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
+
 def preprocess_data(data):
+    """
+    Preprocesses the data by removing null values, removing outliers,
+        and converting the posting_date to year_listed and month
+    :param data: The data to processed
+    :return: The processed data
+    """
+
     data = data.dropna(subset=['posting_date', 'price', 'odometer'])
     data = data.loc[(data['price'] >= 1000) & (data['price'] <= 100000)]
     data = data.loc[(data['odometer'] >= 1000)]
@@ -15,11 +23,16 @@ def preprocess_data(data):
     data['year_listed'] = data['posting_date'].dt.year
     data['month'] = data['posting_date'].dt.month
 
-    # headers = id,url,region,region_url,price,year,manufacturer,model,condition,cylinders,fuel,odometer,title_status,transmission,VIN,drive,size,type,paint_color,image_url,description,county,state,lat,long,posting_date
-    # keep = ['price', 'year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status', 'paint_color', 'year_listed', 'month']
-    # drop = ['id', 'url', 'region', 'region_url', 'cylinders', 'fuel', 'transmission', 'VIN', 'drive', 'size', 'type', 'image_url', 'description', 'county', 'state', 'lat', 'long', 'posting_date']
-    data = data.drop(columns=['id', 'url', 'region', 'region_url', 'cylinders', 'fuel', 'transmission', 'VIN', 'drive', 'size', 'type', 'image_url', 'description', 'county', 'state', 'lat', 'long', 'posting_date'])
-    
+    # headers = id,url,region,region_url,price,year,manufacturer,model,condition,cylinders,fuel,odometer,title_status,
+    #           transmission,VIN,drive,size,type,paint_color,image_url,description,county,state,lat,long,posting_date
+    # keep = ['price', 'year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status', 'paint_color',
+    #           'year_listed', 'month']
+    # drop = ['id', 'url', 'region', 'region_url', 'cylinders', 'fuel', 'transmission', 'VIN', 'drive', 'size', 'type',
+    #           'image_url', 'description', 'county', 'state', 'lat', 'long', 'posting_date']
+    data = data.drop(
+        columns=['id', 'url', 'region', 'region_url', 'cylinders', 'fuel', 'transmission', 'VIN', 'drive', 'size',
+                 'type', 'image_url', 'description', 'county', 'state', 'lat', 'long', 'posting_date'])
+
     encoder = LabelEncoder()
     data['manufacturer'] = encoder.fit_transform(data['manufacturer'].astype(str))
     joblib.dump(encoder, './models/encoders/manufacturer_encoder.joblib')
@@ -38,15 +51,21 @@ def preprocess_data(data):
     data = pd.DataFrame(data_i, columns=data.columns)
     return data
 
+
 def preprocess_input(data):
-    manufactuere_encoder = joblib.load('./models/encoders/manufacturer_encoder.joblib')
+    """
+    Preprocesses the input data by encoding the categorical data and imputing the missing values
+    :param data: The data to be processed
+    :return: The processed data
+    """
+    manufacturer_encoder = joblib.load('./models/encoders/manufacturer_encoder.joblib')
     model_encoder = joblib.load('./models/encoders/model_encoder.joblib')
     condition_encoder = joblib.load('./models/encoders/condition_encoder.joblib')
     title_status_encoder = joblib.load('./models/encoders/title_status_encoder.joblib')
     paint_color_encoder = joblib.load('./models/encoders/paint_color_encoder.joblib')
     imputer = joblib.load('./models/imputers/price_imputer.joblib')
 
-    data['manufacturer'] = manufactuere_encoder.transform(data['manufacturer'].astype(str))
+    data['manufacturer'] = manufacturer_encoder.transform(data['manufacturer'].astype(str))
     data['model'] = model_encoder.transform(data['model'].astype(str))
     data['condition'] = condition_encoder.transform(data['condition'].astype(str))
     data['title_status'] = title_status_encoder.transform(data['title_status'].astype(str))
@@ -56,7 +75,13 @@ def preprocess_input(data):
     data = pd.DataFrame(data_i, columns=data.columns)
     return data
 
+
 def train_model(data, model_filename):
+    """
+    Trains the model using the data and saves the model to a file
+    :param data: The preprocessed data to train the model with
+    :param model_filename: The filename of the model
+    """
     x = data.drop(columns=['price'])
     y = data['price']
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
@@ -76,21 +101,37 @@ def train_model(data, model_filename):
     print(f'Root Mean Squared Error: {rmse:.2f}')
     joblib.dump(model, ("./models/" + model_filename))
 
+
 def use_model(model_filename, input_string):
-    input_data = pd.DataFrame([input_string.split(",")], columns=['year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status', 'paint_color', 'year_listed', 'month'])
+    """
+    Uses the model to predict the price of a car
+    :param model_filename: The filename of the model
+    :param input_string: The input string containing the data to predict the price of a car
+    :return: The predicted price of the car
+    """
+    input_data = pd.DataFrame([input_string.split(",")],
+                              columns=['year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status',
+                                       'paint_color', 'year_listed', 'month'])
     model = joblib.load(model_filename)
     input_data = preprocess_input(input_data)
     predicted_price = model.predict(input_data)
     return predicted_price
 
+
 def main():
+    """
+    Run to train the model and save it to a file
+    Predicts the price of a car using the model
+    """
     # data = pd.read_csv('vehicles.csv')
     # data = preprocess_data(data)
     # train_model(data, 'price_prediction.joblib')
-    predicted_price = use_model('./models/price_prediction.joblib', '2020,honda,civic si coupe 2d,excellent,3000,clean,white,2021,1')
+    predicted_price = use_model('./models/price_prediction.joblib',
+                                '2020,honda,civic si coupe 2d,excellent,3000,clean,white,2021,1')
     print(f'Predicted price: {predicted_price[0]}')
     predicted_price = use_model('./models/price_prediction.joblib', '2020,ford,f-150,excellent,1000,clean,white,2020,1')
     print(f'Predicted price: {predicted_price[0]}')
+
 
 if __name__ == '__main__':
     main()

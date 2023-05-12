@@ -199,6 +199,7 @@ app.post('/submitUser', async (req,res) => {
     var username = req.body.username;
     var password = req.body.password;
     var email = req.body.email;
+    var bioStart = "I am a member of the Cargain app!";
 
     if (!email){
         return res.render("submitError", {message: "Email cannot be blank"});
@@ -224,11 +225,14 @@ app.post('/submitUser', async (req,res) => {
    }
 
     var hashedPassword = await bcrypt.hash(password, saltRounds);
+    
 	
-	await userCollection.insertOne({username: username, password: hashedPassword, email: email});
+	await userCollection.insertOne({username: username, password: hashedPassword, email: email, bio: bioStart});
 	console.log("Inserted user");
     req.session.username = username;
     req.session.authenticated = true;
+    req.session.email = email;
+    req.session.bio = bioStart;
     req.session.cookie.maxAge = expireTime;
     res.redirect('/loggedin');
 });
@@ -244,7 +248,7 @@ app.post('/loggingin', async (req,res) => {
 	   return;
 	}
 
-	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
+	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1}).toArray();
     const username = result[0].username;
 
 	console.log(result);
@@ -259,6 +263,7 @@ app.post('/loggingin', async (req,res) => {
 		req.session.email = email;
         req.session.username = username;
         req.session.user_type = result[0].user_type;
+        req.session.bio = result[0].bio;
 		req.session.cookie.maxAge = expireTime;
 
 		res.redirect('/loggedin');
@@ -274,14 +279,74 @@ app.get('/loggedin', (req,res) => {
         res.redirect('/');
         return;
     }
+    res.render("loggedin", {user: req.session.username, email: req.session.email, bio: req.session.bio});
 
-    res.render("loggedin", {user: req.session.username});
 });
 
 app.get('/logout', (req,res) => {
 	req.session.destroy();
     res.redirect('/');
 });
+
+app.post('/updateInfo', async (req, res) => {
+    const newUserName = req.body.username;
+    const newBio = req.body.bio;
+    const newEmail = req.body.email;
+
+    let updateSchema;
+
+    if (newUserName) {
+        updateSchema = Joi.string().alphanum().max(20);
+        const validationResult = updateSchema.validate(newUserName);
+        if (validationResult.error) {
+            console.log(validationResult.error);
+            res.render("errorMessage", {message: "Update failed, try again"});
+            return;
+        }
+    } else if (newBio) {
+        updateSchema = Joi.string().max(250);
+        const validationResult = updateSchema.validate(newBio);
+        if (validationResult.error) {
+            console.log(validationResult.error);
+            res.render("errorMessage", {message: "Update failed, try again"});
+            return;
+        }
+    } else if (newEmail) {
+        updateSchema = Joi.string().email();
+        const validationResult = updateSchema.validate(newEmail);
+        if (validationResult.error) {
+            console.log(validationResult.error);
+            res.render("errorMessage", {message: "Update failed, try again"});
+            return;
+        }
+    }
+
+    const filter = {username: req.session.username, email: req.session.email};
+    const update = {};
+
+    
+    if (newUserName) {
+        update.username = newUserName;
+    }
+
+    if (newBio) {
+        update.bio = newBio;
+    }
+
+    if (newEmail) {
+        update.email = newEmail;
+    }
+
+    await userCollection.updateMany(filter, { $set: update });
+
+    console.log("Updated user");
+    // Handle session and redirect as needed
+    req.session.username = newUserName || req.session.username;
+    req.session.bio = newBio || req.session.bio;
+    req.session.email = newEmail || req.session.email;
+    res.redirect('/loggedin');
+});
+
 
 
 app.get('/cat/:id', (req,res) => {

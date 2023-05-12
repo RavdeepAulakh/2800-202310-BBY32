@@ -7,6 +7,19 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'vravdeep@gmail.com',
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
+  
+  
 
 const port = process.env.PORT || 3000;
 
@@ -16,7 +29,7 @@ app.set('view engine', 'ejs');
 const Joi = require("joi");
 
 
-const expireTime = 1 * 60 * 60 * 1000; //expires after 1 day  (hours * minutes * seconds * millis)
+const expireTime = 1 * 60 * 60 * 1000; //expires after 1 hour  (hours * minutes * seconds * millis)
 
 /* secret information section */
 const {MONGODB_HOST,
@@ -95,6 +108,76 @@ app.get('/', (req,res) => {
     }
     res.render("index");
   });
+
+
+  app.get('/password-reset', (req, res) => {
+    res.render("passwordReset");
+  });
+
+  app.post('/password-reset', async (req, res) => {
+    const email = req.body.email;
+    const user = await userCollection.findOne({ email: email });
+  
+    if (!user) {
+      return res.render("passwordResetEmailFail");
+    }
+  
+    const token = crypto.randomBytes(20).toString('hex');
+  
+    await userCollection.updateOne(
+      { email: email },
+      { $set: { passwordResetToken: token } }
+    );
+  
+    const resetLink = `http://localhost:3000/protected-reset?token=${token}`;
+    const mailOptions = {
+      from: 'vravdeep@gmail.com',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You have requested to reset your password. Please follow this link to reset your password: ${resetLink}`,
+      html: `You have requested to reset your password. Please follow this <a href="${resetLink}">link</a> to reset your password.`
+    };
+  
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        return res.send('Error sending email.');
+      }
+      console.log('Email sent: ' + info.response);
+      res.render("passwordResetEmailSent");
+    });
+  });
+
+  app.get('/protected-reset', async (req, res) => {
+    const token = req.query.token;
+    const user = await userCollection.findOne({ passwordResetToken: token });
+  
+    if (!user) {
+      return res.render("tokenExpired");
+    }
+  
+    res.render('ActualResetPage', { token: token });
+  });
+  
+  app.post('/protected-reset', async (req, res) => {
+    const token = req.body.token;
+    const user = await userCollection.findOne({ passwordResetToken: token });
+  
+    if (!user) {
+      return res.send('Error: Invalid or expired token.');
+    }
+  
+    const password = req.body.password;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+    await userCollection.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
+    );
+  
+    res.render("passwordResetSuccess");
+  });
+  
   
 
 app.get('/nosql-injection', async (req,res) => {
@@ -138,7 +221,7 @@ app.get('/contact', (req,res) => {
     res.render("contact", {missing: missingEmail});
 });
 
-app.post('/submitEmail', (req,res) => {
+app.get('/submitEmail', (req,res) => {
     var email = req.body.email;
     if (!email) {
         res.redirect('/contact?missing=1');
@@ -279,7 +362,7 @@ app.get('/loggedin', (req,res) => {
         res.redirect('/');
         return;
     }
-    res.render("loggedin", {user: req.session.username, email: req.session.email, bio: req.session.bio});
+    res.render("loggedin", {username: req.session.username});
 
 });
 
@@ -287,6 +370,10 @@ app.get('/logout', (req,res) => {
 	req.session.destroy();
     res.redirect('/');
 });
+
+app.get('/userProfile', (req, res) => {
+    res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio})
+})
 
 app.post('/updateInfo', async (req, res) => {
     const newUserName = req.body.username;
@@ -324,7 +411,7 @@ app.post('/updateInfo', async (req, res) => {
     const filter = {username: req.session.username, email: req.session.email};
     const update = {};
 
-    
+
     if (newUserName) {
         update.username = newUserName;
     }

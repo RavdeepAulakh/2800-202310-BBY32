@@ -1,178 +1,25 @@
 <%- include("templates/header") %>
-
-<section>
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card mb-4">
-                <div class="card-body text-center">
-                    <!-- <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava3.webp" alt="avatar"
-                class="rounded-circle img-fluid" style="width: 150px;"> -->
-                    <h5 class="my-3"><%= user %></h5>
-                    <!-- <p class="text-muted mb-1">Full Stack Developer</p>
-              <p class="text-muted mb-4">Bay Area, San Francisco, CA</p> -->
-                    <div class="d-flex justify-content-center mb-2">
-                        <a
-                            class="btn btn-primary rounded-pill px-3"
-                            href="/logout"
-                            >Sign out</a
-                        >
-                        <!-- <button type="button" class="btn btn-primary">Follow</button>
-                <button type="button" class="btn btn-outline-primary ms-1">Message</button> -->
-                    </div>
-                </div>
-            </div>
-            <div class="card mb-4 mb-lg-0">
-                <div class="card-body p-0">
-                
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-8">
-            <form action='/updateInfo' method='post'>
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Username</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <div class="input-group">
-                                <input
-                                    type="text"
-                                    name="username"
-                                    class="form-control"
-                                    placeholder="<%= user %>"
-                                />
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="submit"
-                                >
-                                    Update
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <br />
-                    <hr />
-                    <br />
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Email</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <div class="input-group">
-                                <input
-                                    type="email"
-                                    name="email"
-                                    class="form-control"
-                                    placeholder="<%= email %>"
-                                />
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="submit"
-                                >
-                                    Update
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <br />
-                    <hr />
-                    <br />
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Bio</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <div class="form-floating">
-                                <textarea
-                                    class="form-control"
-                                    name="bio"
-                                    placeholder="Bio"
-                                    id="floatingTextarea2"
-                                    style="height: 100px"
-                                >
-                                <%= bio %></textarea
-                                >
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="submit"
-                                >
-                                    Update
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </form>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4 mb-md-0">
-                        <div class="card-body">
-                            <p class="mb-4">
-                                <span class="text-primary font-italic me-1"
-                                    >Favourite</span
-                                >
-                                Car 1
-                            </p>
-                            <p class="mb-1" style="font-size: 0.77rem">
-                                Year
-                            </p>
-                            
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Make
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Model
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Fuel efficiency 
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Total Mileage
-                            </p>
-
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-4 mb-md-0">
-                        <div class="card-body">
-                            <p class="mb-4">
-                                <span class="text-primary font-italic me-1"
-                                    >Favourite</span
-                                >
-                                Car 2
-                            </p>
-                            <p class="mb-1" style="font-size: 0.77rem">
-                                Year
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Make
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Model
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Fuel efficiency
-                            </p>
-
-                            <p class="mt-4 mb-1" style="font-size: 0.77rem">
-                                Total mileage
-                            </p>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="flex flex-col items-center justify-center h-screen">
+    <h1 class="text-4xl font-bold mb-8">Hello <%= username %>, Welcome to Cargain!</h1>
+    <!-- <img src="/public/logo.png" alt="Cargain logo" class="mb-8"> -->
+    <div class="grid grid-cols-2 gap-4">
+      <a href="#" class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-2xl font-bold mb-4">Find a Car</h2>
+        <p class="text-gray-600">Answer some questions about yourself and find the right car for you!</p>
+      </a>
+      <a href="#" class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-2xl font-bold mb-4">Sell or Buy a Car</h2>
+        <p class="text-gray-600">Enter details of a car and figure out what its what worth.</p>
+      </a>
+      <a href="/userProfile" class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-2xl font-bold mb-4">Profile</h2>
+        <p class="text-gray-600">View your Settings and Prefences.</p>
+      </a>
+      <a href="#" class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-2xl font-bold mb-4">My Garage</h2>
+        <p class="text-gray-600">View and change the car you have saved to the website to check price of.</p>
+      </a>
     </div>
-</section>
-<%- include("templates/footer") %>
+  </div>
+
+  <%- include("templates/footer") %>

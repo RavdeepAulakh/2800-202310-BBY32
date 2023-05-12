@@ -74,7 +74,7 @@ def train_model(data, model_filename):
     print(f'Mean Absolute Error: {mae:.2f}')
     print(f'Mean Squared Error: {mse:.2f}')
     print(f'Root Mean Squared Error: {rmse:.2f}')
-    joblib.dump(model, model_filename)
+    joblib.dump(model, ("./models/" + model_filename))
 
 def use_model(model_filename, input_string):
     input_data = pd.DataFrame([input_string.split(",")], columns=['year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status', 'paint_color', 'year_listed', 'month'])
@@ -87,7 +87,7 @@ def main():
     # data = pd.read_csv('vehicles.csv')
     # data = preprocess_data(data)
     # train_model(data, 'price_prediction.joblib')
-    predicted_price = use_model('./models/price_prediction.joblib', '2002,honda,civic,excellent,100000,clean,white,2002,1')
+    predicted_price = use_model('./models/price_prediction.joblib', '2020,honda,civic si coupe 2d,excellent,3000,clean,white,2021,1')
     print(f'Predicted price: {predicted_price[0]}')
     predicted_price = use_model('./models/price_prediction.joblib', '2020,ford,f-150,excellent,1000,clean,white,2020,1')
     print(f'Predicted price: {predicted_price[0]}')

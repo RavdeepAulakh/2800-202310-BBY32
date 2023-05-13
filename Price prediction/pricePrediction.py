@@ -126,10 +126,9 @@ def main():
     # data = pd.read_csv('vehicles.csv')
     # data = preprocess_data(data)
     # train_model(data, 'price_prediction.joblib')
+
     predicted_price = use_model('./models/price_prediction.joblib',
-                                '2020,honda,civic si coupe 2d,excellent,3000,clean,white,2021,1')
-    print(f'Predicted price: {predicted_price[0]}')
-    predicted_price = use_model('./models/price_prediction.joblib', '2020,ford,f-150,excellent,1000,clean,white,2020,1')
+                                '2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1')
     print(f'Predicted price: {predicted_price[0]}')
 
 

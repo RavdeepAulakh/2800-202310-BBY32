@@ -15,6 +15,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
+const { spawn } = require("child_process");
 
 const port = process.env.PORT || 3000;
 
@@ -442,10 +443,23 @@ app.post("/updateInfo", async (req, res) => {
   res.redirect("/loggedin");
 });
 
-app.get("/cat/:id", (req, res) => {
-  var cat = req.params.id;
-
-  res.render("cat", { cat: cat });
+app.get("/predict", (req, res) => {
+    // const input = req.body.input;
+    input = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
+    console.log(input);
+    const python = spawn('python', ['./py_scripts/predict.py', 'predict_price', input]);
+    python.stdout.on('data', function (data) {
+        res.render("predict", {price: data.toString()});
+    });
+    python.stderr.on('data', (data) => {
+        console.error(`Error: ${data}`);
+    });
+    
+    python.on('close', (code) => {
+        if (code !== 0) {
+            console.error(`Python script exited with code ${code}`);
+        }
+    });
 });
 
 app.get("*", (req, res) => {

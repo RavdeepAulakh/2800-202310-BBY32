@@ -7,6 +7,19 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'vravdeep@gmail.com',
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
+  
+  
 
 const port = process.env.PORT || 3000;
 
@@ -16,7 +29,7 @@ app.set('view engine', 'ejs');
 const Joi = require("joi");
 
 
-const expireTime = 1 * 60 * 60 * 1000; //expires after 1 day  (hours * minutes * seconds * millis)
+const expireTime = 1 * 60 * 60 * 1000; //expires after 1 hour  (hours * minutes * seconds * millis)
 
 /* secret information section */
 const {MONGODB_HOST,
@@ -34,7 +47,7 @@ const database = require("./databaseConnection.js");
 const userCollection = database.db(MONGODB_DATABASE).collection('users');
 
 app.use(express.urlencoded({extended: false}));
-app.use(express.static(__dirname + "/../views"));
+app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + "/../public"));
 
 var mongoStore = MongoStore.create({
@@ -95,6 +108,76 @@ app.get('/', (req,res) => {
     }
     res.render("index");
   });
+
+
+  app.get('/password-reset', (req, res) => {
+    res.render("passwordReset");
+  });
+
+  app.post('/password-reset', async (req, res) => {
+    const email = req.body.email;
+    const user = await userCollection.findOne({ email: email });
+  
+    if (!user) {
+      return res.render("passwordResetEmailFail");
+    }
+  
+    const token = crypto.randomBytes(20).toString('hex');
+  
+    await userCollection.updateOne(
+      { email: email },
+      { $set: { passwordResetToken: token } }
+    );
+  
+    const resetLink = `https://2800-202310-bby-32.vercel.app/protected-reset?token=${token}`;
+    const mailOptions = {
+      from: 'vravdeep@gmail.com',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You have requested to reset your password. Please follow this link to reset your password: ${resetLink}`,
+      html: `You have requested to reset your password. Please follow this <a href="${resetLink}">link</a> to reset your password.`
+    };
+  
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        return res.send('Error sending email.');
+      }
+      console.log('Email sent: ' + info.response);
+      res.render("passwordResetEmailSent");
+    });
+  });
+
+  app.get('/protected-reset', async (req, res) => {
+    const token = req.query.token;
+    const user = await userCollection.findOne({ passwordResetToken: token });
+  
+    if (!user) {
+      return res.render("tokenExpired");
+    }
+  
+    res.render('ActualResetPage', { token: token });
+  });
+  
+  app.post('/protected-reset', async (req, res) => {
+    const token = req.body.token;
+    const user = await userCollection.findOne({ passwordResetToken: token });
+  
+    if (!user) {
+      return res.send('Error: Invalid or expired token.');
+    }
+  
+    const password = req.body.password;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+    await userCollection.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
+    );
+  
+    res.render("passwordResetSuccess");
+  });
+  
   
 
 app.get('/nosql-injection', async (req,res) => {
@@ -138,7 +221,7 @@ app.get('/contact', (req,res) => {
     res.render("contact", {missing: missingEmail});
 });
 
-app.post('/submitEmail', (req,res) => {
+app.get('/submitEmail', (req,res) => {
     var email = req.body.email;
     if (!email) {
         res.redirect('/contact?missing=1');
@@ -199,6 +282,7 @@ app.post('/submitUser', async (req,res) => {
     var username = req.body.username;
     var password = req.body.password;
     var email = req.body.email;
+    var bioStart = "I am a member of the Cargain app!";
 
     if (!email){
         return res.render("submitError", {message: "Email cannot be blank"});
@@ -224,11 +308,14 @@ app.post('/submitUser', async (req,res) => {
    }
 
     var hashedPassword = await bcrypt.hash(password, saltRounds);
+    
 	
-	await userCollection.insertOne({username: username, password: hashedPassword, email: email});
+	await userCollection.insertOne({username: username, password: hashedPassword, email: email, bio: bioStart});
 	console.log("Inserted user");
     req.session.username = username;
     req.session.authenticated = true;
+    req.session.email = email;
+    req.session.bio = bioStart;
     req.session.cookie.maxAge = expireTime;
     res.redirect('/loggedin');
 });
@@ -244,7 +331,7 @@ app.post('/loggingin', async (req,res) => {
 	   return;
 	}
 
-	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
+	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1}).toArray();
     const username = result[0].username;
 
 	console.log(result);
@@ -259,6 +346,7 @@ app.post('/loggingin', async (req,res) => {
 		req.session.email = email;
         req.session.username = username;
         req.session.user_type = result[0].user_type;
+        req.session.bio = result[0].bio;
 		req.session.cookie.maxAge = expireTime;
 
 		res.redirect('/loggedin');
@@ -274,14 +362,78 @@ app.get('/loggedin', (req,res) => {
         res.redirect('/');
         return;
     }
+    res.render("loggedin", {username: req.session.username});
 
-    res.render("loggedin", {user: req.session.username});
 });
 
 app.get('/logout', (req,res) => {
 	req.session.destroy();
     res.redirect('/');
 });
+
+app.get('/userProfile', (req, res) => {
+    res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio})
+})
+
+app.post('/updateInfo', async (req, res) => {
+    const newUserName = req.body.username;
+    const newBio = req.body.bio;
+    const newEmail = req.body.email;
+
+    let updateSchema;
+
+    if (newUserName) {
+        updateSchema = Joi.string().alphanum().max(20);
+        const validationResult = updateSchema.validate(newUserName);
+        if (validationResult.error) {
+            console.log(validationResult.error);
+            res.render("errorMessage", {message: "Update failed, try again"});
+            return;
+        }
+    } else if (newBio) {
+        updateSchema = Joi.string().max(250);
+        const validationResult = updateSchema.validate(newBio);
+        if (validationResult.error) {
+            console.log(validationResult.error);
+            res.render("errorMessage", {message: "Update failed, try again"});
+            return;
+        }
+    } else if (newEmail) {
+        updateSchema = Joi.string().email();
+        const validationResult = updateSchema.validate(newEmail);
+        if (validationResult.error) {
+            console.log(validationResult.error);
+            res.render("errorMessage", {message: "Update failed, try again"});
+            return;
+        }
+    }
+
+    const filter = {username: req.session.username, email: req.session.email};
+    const update = {};
+
+
+    if (newUserName) {
+        update.username = newUserName;
+    }
+
+    if (newBio) {
+        update.bio = newBio;
+    }
+
+    if (newEmail) {
+        update.email = newEmail;
+    }
+
+    await userCollection.updateMany(filter, { $set: update });
+
+    console.log("Updated user");
+    // Handle session and redirect as needed
+    req.session.username = newUserName || req.session.username;
+    req.session.bio = newBio || req.session.bio;
+    req.session.email = newEmail || req.session.email;
+    res.redirect('/loggedin');
+});
+
 
 
 app.get('/cat/:id', (req,res) => {

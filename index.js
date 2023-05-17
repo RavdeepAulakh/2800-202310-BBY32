@@ -38,7 +38,8 @@ const {MONGODB_HOST,
     MONGODB_PASSWORD,
     MONGODB_DATABASE,
     MONGODB_SESSION_SECRET,
-    NODE_SESSION_SECRET} = process.env;
+    NODE_SESSION_SECRET,
+    OPENAI_API_KEY} = process.env;
 
 
 /* END secret section */
@@ -466,7 +467,7 @@ app.post('/chatbot', async (req, res) => {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer ${OPENAI_API_KEY}',
         },
       });
   

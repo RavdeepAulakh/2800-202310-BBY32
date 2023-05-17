@@ -1,0 +1,48 @@
+<!-- HTML code for the chatbot interface -->
+<div id="chat-container">
+    <div id="chat-messages"></div>
+    <form id="chat-form">
+      <input type="text" id="chat-input" placeholder="Type your message">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  
+  <!-- JavaScript code for handling user input and displaying chat messages -->
+  <script>
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+  
+    chatForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const message = chatInput.value.trim();
+  
+      if (message !== '') {
+        appendMessage('user', message);
+        chatInput.value = '';
+  
+        // Send user message to the server
+        fetch('/chatbot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }), // Ensure the message is correctly assigned
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const reply = data.reply;
+            appendMessage('chatbot', reply);
+          })
+          .catch((error) => {
+            console.error('Chatbot request failed:', error);
+          });
+      }
+    });
+  
+    function appendMessage(role, content) {
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message';
+      messageElement.innerHTML = `<span class="${role}">${content}</span>`;
+      chatMessages.appendChild(messageElement);
+    }
+  </script>
+  

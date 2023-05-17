@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 12;
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -443,6 +444,42 @@ app.get('/cat/:id', (req,res) => {
     res.render("cat", {cat: cat});
 });
 
+app.get('/chatbot', (req,res) => {
+    res.render("chatbot");
+});
+
+app.post('/chatbot', async (req, res) => {
+    const message = req.body.message;
+    const chatSessionId = req.session.id; // Use a unique identifier for the chat session
+  
+    try {
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        messages: [
+          { role: 'system', content: 'You are a user' },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 50,
+        temperature: 0.7,
+        n: 1,
+        stop: '\n',
+        model: 'gpt-3.5-turbo' // Specify the model parameter
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer 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',
+        },
+      });
+  
+      const reply = response.data.choices[0].message.content;
+      res.json({ reply });
+    } catch (error) {
+      console.error('Chatbot error:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        console.error('Chatbot error:', error.response.data.error);
+      }
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 
 app.get("*", (req,res) => {
 	res.status(404);

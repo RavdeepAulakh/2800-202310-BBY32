@@ -467,7 +467,7 @@ app.post('/chatbot', async (req, res) => {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${OPENAI_API_KEY}',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
       });
   
@@ -481,6 +481,7 @@ app.post('/chatbot', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+  
 
 app.get("*", (req,res) => {
 	res.status(404);

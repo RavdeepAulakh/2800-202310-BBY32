@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
+const axios = require("axios");
 const MongoStore = require("connect-mongo");
 const bcrypt = require("bcrypt");
 const saltRounds = 12;
@@ -15,7 +16,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
-const { spawn } = require("child_process");
 
 const port = process.env.PORT || 3000;
 
@@ -447,19 +447,17 @@ app.get("/predict", (req, res) => {
     // const input = req.body.input;
     input = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
     console.log(input);
-    const python = spawn('python', ['./py_scripts/predict.py', 'predict_price', input]);
-    python.stdout.on('data', function (data) {
-        res.render("predict", {price: data.toString()});
-    });
-    python.stderr.on('data', (data) => {
-        console.error(`Error: ${data}`);
-    });
     
-    python.on('close', (code) => {
-        if (code !== 0) {
-            console.error(`Python script exited with code ${code}`);
-        }
-    });
+    axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
+        input: input
+    })
+    .then(function (response) {
+        console.log(response.data);
+        res.render("predict", {price: response.data.prediction});
+    })
+    .catch(function (error) {
+        console.log(error);
+    })
 });
 
 app.get("*", (req, res) => {

@@ -1,6 +1,3 @@
-
-// require("../utils.js");
-
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
@@ -50,7 +47,7 @@ const userCollection = database.db(MONGODB_DATABASE).collection('users');
 
 app.use(express.urlencoded({extended: true}));
 app.set('views', __dirname + '/views');
-app.use(express.static(__dirname + "/../public"));
+app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 
 var mongoStore = MongoStore.create({

@@ -49,6 +49,7 @@ app.use(express.urlencoded({extended: true}));
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
+app.use(express.static(__dirname + '/js'));
 
 var mongoStore = MongoStore.create({
 	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/test`,

@@ -512,11 +512,12 @@ app.post("/updateInfo", async (req, res) => {
 
 app.get("/predict", (req, res) => {
     const input = req.body.input;
+    const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
     // test = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
     console.log(input);
     
     axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
-        input: input
+        input: formatted
     })
     .then(function (response) {
         console.log(response.data);

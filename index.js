@@ -44,6 +44,8 @@ const database = require("./databaseConnection.js");
 
 const userCollection = database.db(MONGODB_DATABASE).collection("users");
 
+const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars');
+
 app.use(express.urlencoded({extended: true}));
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
@@ -51,11 +53,11 @@ app.use(express.json());
 app.use(express.static(__dirname + '/js'));
 
 var mongoStore = MongoStore.create({
-  mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/test`,
-  crypto: {
-    secret: MONGODB_SESSION_SECRET,
-  },
-});
+	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`,
+	crypto: {
+		secret: MONGODB_SESSION_SECRET
+	}
+})
 
 app.use(
   session({
@@ -350,43 +352,43 @@ app.post("/submitUser", async (req, res) => {
   var email = req.body.email;
   var bioStart = "I am a member of the Cargain app!";
 
-  if (!email) {
-    return res.render("submitError", { message: "Email cannot be blank" });
-  }
-  if (!password) {
-    return res.render("submitError", { message: "Password cannot be blank" });
-  }
-  if (!username) {
-    return res.render("submitError", { message: "Username cannot be blank" });
-  }
-  const schema = Joi.object({
-    username: Joi.string().alphanum().max(20).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().max(20).required(),
-  });
-
-  const validationResult = schema.validate({ username, password, email });
-  if (validationResult.error != null) {
-    console.log(validationResult.error);
-    res.redirect("/createUser");
-    return;
-  }
+    if (!email){
+        return res.render("submitError", {message: "Email cannot be blank"});
+    }
+    if(!password){
+        return res.render("submitError", {message: "Password cannot be blank"});
+    }
+    if(!username){
+        return res.render("submitError", {message: "Username cannot be blank"});
+    }
+	const schema = Joi.object(
+		{
+			username: Joi.string().alphanum().max(20).required(),
+      email: Joi.string().email().required(),
+			password: Joi.string().max(20).required()
+		});
+	
+	const validationResult = schema.validate({username, password, email});
+	if (validationResult.error != null) {
+	   console.log(validationResult.error);
+	   res.redirect("/createUser");
+	   return;
+   }
 
   var hashedPassword = await bcrypt.hash(password, saltRounds);
+	// Adding avatar to the user document
+  const avatar = await avatarCollection.aggregate([{ $sample: { size: 1 } }]).next();
+  const avatarURL = avatar ? avatar.url : '';
 
-  await userCollection.insertOne({
-    username: username,
-    password: hashedPassword,
-    email: email,
-    bio: bioStart,
-  });
-  console.log("Inserted user");
-  req.session.username = username;
-  req.session.authenticated = true;
-  req.session.email = email;
-  req.session.bio = bioStart;
-  req.session.cookie.maxAge = expireTime;
-  res.redirect("/loggedin");
+	await userCollection.insertOne({username: username, password: hashedPassword, email: email, bio: bioStart, avatar: avatarURL});
+	console.log("Inserted user");
+    req.session.username = username;
+    req.session.authenticated = true;
+    req.session.email = email;
+    req.session.bio = bioStart;
+    req.session.cookie.maxAge = expireTime;
+    req.session.avatar = avatarURL;
+    res.redirect('/loggedin');
 });
 
 app.post("/loggingin", async (req, res) => {
@@ -400,26 +402,23 @@ app.post("/loggingin", async (req, res) => {
     return;
   }
 
-  const result = await userCollection
-    .find({ email: email })
-    .project({ username: 1, password: 1, user_type: 1, _id: 1, bio: 1 })
-    .toArray();
-  const username = result[0].username;
+	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1}).toArray();
 
-  console.log(result);
-  if (result.length != 1) {
-    console.log("user not found");
-    res.redirect("/login");
+	console.log(result);
+	if (result.length != 1) {
+		console.log("user not found");
+		res.render("loginfail");
     return;
   }
+
   if (await bcrypt.compare(password, result[0].password)) {
-    console.log("correct password");
     req.session.authenticated = true;
     req.session.email = email;
-    req.session.username = username;
+    req.session.username = result[0].username;;
     req.session.user_type = result[0].user_type;
     req.session.bio = result[0].bio;
-    req.session.cookie.maxAge = expireTime;
+    req.session.avatar = result[0].avatar;
+	  req.session.cookie.maxAge = expireTime;
 
     res.redirect("/loggedin");
     return;
@@ -441,45 +440,40 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
-app.get("/userProfile", (req, res) => {
-  res.render("userProfile", {
-    user: req.session.username,
-    email: req.session.email,
-    bio: req.session.bio,
-  });
+app.get('/userProfile', async (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+    return;
+  }
+  const avatars = await avatarCollection.find().toArray();
+  res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars})
 });
 
-app.post("/updateInfo", async (req, res) => {
+app.post('/updateInfo', async (req,res) => {
   const newUserName = req.body.username;
   const newBio = req.body.bio;
   const newEmail = req.body.email;
-
   let updateSchema;
+  let validationResult;
 
   if (newUserName) {
     updateSchema = Joi.string().alphanum().max(20);
-    const validationResult = updateSchema.validate(newUserName);
-    if (validationResult.error) {
-      console.log(validationResult.error);
-      res.render("errorMessage", { message: "Update failed, try again" });
-      return;
-    }
-  } else if (newBio) {
+    validationResult = updateSchema.validate(newUserName);
+  } 
+  if (newBio) {
     updateSchema = Joi.string().max(250);
-    const validationResult = updateSchema.validate(newBio);
-    if (validationResult.error) {
-      console.log(validationResult.error);
-      res.render("errorMessage", { message: "Update failed, try again" });
-      return;
-    }
-  } else if (newEmail) {
+    validationResult = updateSchema.validate(newBio);
+  } 
+    
+  if (newEmail) {
     updateSchema = Joi.string().email();
-    const validationResult = updateSchema.validate(newEmail);
-    if (validationResult.error) {
-      console.log(validationResult.error);
-      res.render("errorMessage", { message: "Update failed, try again" });
-      return;
-    }
+    validationResult = updateSchema.validate(newEmail);
+  }
+
+  if (validationResult.error) {
+    console.log(validationResult.error);
+    res.render("errorMessage", { message: "Update failed, try again" });
+    return;
   }
 
   const filter = { username: req.session.username, email: req.session.email };
@@ -499,12 +493,34 @@ app.post("/updateInfo", async (req, res) => {
 
   await userCollection.updateMany(filter, { $set: update });
 
-  console.log("Updated user");
-  // Handle session and redirect as needed
-  req.session.username = newUserName || req.session.username;
-  req.session.bio = newBio || req.session.bio;
-  req.session.email = newEmail || req.session.email;
-  res.redirect("/loggedin");
+    // Handle session and redirect as needed
+    req.session.username = newUserName || req.session.username;
+    req.session.bio = newBio || req.session.bio;
+    req.session.email = newEmail || req.session.email;
+    res.redirect('userProfile');
+});
+
+app.post('/changeAvatar', async (req, res) => {
+  const newAvatarUrl = req.body.url;
+  let newURLschema = Joi.string();
+  let URLvalidation  = newURLschema.validate(newAvatarUrl);
+  
+  if (URLvalidation.error) {
+    console.log(URLvalidation.error);
+    res.render("errorMessage", {message: "Update failed, try again"});
+    return;
+  } else {
+    const avatarFilter = {username: req.session.username, email: req.session.email};
+    
+    try {
+      await userCollection.updateMany(avatarFilter, { $set: {avatar: newAvatarUrl} });
+      req.session.avatar = newAvatarUrl;
+      res.json({ success: true });
+    } catch(err) {
+      console.log(err);
+      res.json({ success: false, error: err.message });
+    }
+  }
 });
 
 app.get("/predict", (req, res) => {

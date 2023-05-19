@@ -13,6 +13,7 @@
     const chatContainer = document.getElementById('chat-container');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
+    appendMessage('assistant', '<%= initialMessage %>');
 
     messageForm.addEventListener('submit', async (event) => {
       event.preventDefault();

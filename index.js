@@ -20,8 +20,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-let rawdata = fs.readFileSync('valid_inputs.json');
-let validInputs = JSON.parse(rawdata);
+let validInputs = JSON.parse(fs.readFileSync('valid_inputs.json', 'utf-8'));
 
 const port = process.env.PORT || 3000;
 
@@ -529,60 +528,42 @@ app.get("/predict", (req, res) => {
     })
 });
 
-
-app.get('/priceChat', async (req, res) => {
-
-  if (!req.session.authenticated){
-      res.redirect('/login');
-      return;
-  }
-
-  res.render("pricechat");
+app.get('/priceChat', (req, res) => {
+  // Initialize carData in session
+  req.session.carData = {
+    'year': null,
+    'manufacturer': null,
+    'model': null,
+    'condition': null,
+    'title_status': null,
+    'paint_color': null
+  };
+  console.log(req.session.carData);
+  res.render('pricechat', { initialMessage: "Tell me about the car to find the price." });
 });
 
-// Price Chatbot
-// Needs to get the details of the car from the user
-// 'year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status', 'paint_color'
-// Then it needs to redirect to the predict page with the details
-const fields = ['year', 'manufacturer', 'model', 'condition', 'title_status', 'paint_color'];
-let initialPrompt = "Tell me about the car to find the price";
-
 app.post('/priceChat', async (req, res) => {
+  const { message } = req.body;  // User's message
+  
+  // If carData is not initialized, initialize it
+  if (!req.session.carData) {
+    return res.redirect('/priceChat');
+  }
+
+  // If all car details are collected, redirect to /predict
+  if (Object.values(req.session.carData).every(val => val !== null)) {
+    return res.redirect('/predict');
+  }
+  
   try {
-    const { message } = req.body;
-    console.log('Received message:', message);
-    
-    // Initialize user data object if it does not exist
-    if (!req.session.userData) {
-      req.session.userData = {};
-      for (let field of fields) {
-        req.session.userData[field] = null;
-      }
-    }
-
-    // Check if all fields are filled
-    let allFieldsFilled = Object.values(req.session.userData).every(val => val !== null);
-
-    if (allFieldsFilled) {
-      // Redirect to prediction route and send gathered information
-      return res.redirect(307, '/predict');
-    }
-
-    // Extract required field from message
-    for (let field of fields) {
-      if (message.includes(field)) {
-        req.session.userData[field] = message.split(field)[1].trim();
-        break;
-      }
-    }
-
+    // Call to OpenAI API
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: 'You are a helpful assistant finding the detail of a car.' },
-          { role: 'assistant', content: `Here are the valid inputs for the car details: ${JSON.stringify(validInputs)}`},
+          { role: 'system', content: 'You are a helpful assistant finding the following detail of a car to redirect the user. year, manufacturer, model, condition, odometer, title_status, paint_color' },
+          { role: 'assistant', content: `Here are the valid inputs for the car details: `},
           { role: 'user', content: message },
         ],
       },
@@ -594,28 +575,100 @@ app.post('/priceChat', async (req, res) => {
       }
     );
 
-    console.log('OpenAI API response:', response.data);
-
-    const { choices } = response.data;
-
-    if (choices && choices.length > 0) {
-      const reply = response.data.choices[0].message.content;
-      if (reply) {
-        console.log('Generated reply:', reply);
-        res.json({ reply });
-      } else {
-        console.log('No reply generated.');
-        res.status(500).send('No reply generated.');
-      }
-    } else {
-      console.log('No reply generated.');
-      res.status(500).send('No reply generated.');
-    }                
+    const reply = response.data.choices[0].message.content;
+    res.json({ reply });  // Send the assistant's reply back to the client
   } catch (error) {
     console.error(error);
     res.status(500).send('An error occurred.');
   }
 });
+
+// app.get('/priceChat', async (req, res) => {
+
+//   if (!req.session.authenticated){
+//       res.redirect('/login');
+//       return;
+//   }
+
+//   res.render("pricechat");
+// });
+
+// // Price Chatbot
+// // Needs to get the details of the car from the user
+// // 'year', 'manufacturer', 'model', 'condition', 'odometer', 'title_status', 'paint_color'
+// // Then it needs to redirect to the predict page with the details
+// const fields = ['year', 'manufacturer', 'model', 'condition', 'title_status', 'paint_color'];
+// let initialPrompt = "Tell me about the car to find the price";
+
+// app.post('/priceChat', async (req, res) => {
+//   try {
+//     const { message } = req.body;
+//     console.log('Received message:', message);
+    
+//     // Initialize user data object if it does not exist
+//     if (!req.session.userData) {
+//       req.session.userData = {};
+//       for (let field of fields) {
+//         req.session.userData[field] = null;
+//       }
+//     }
+
+//     // Check if all fields are filled
+//     let allFieldsFilled = Object.values(req.session.userData).every(val => val !== null);
+
+//     if (allFieldsFilled) {
+//       // Redirect to prediction route and send gathered information
+//       return res.redirect(307, '/predict');
+//     }
+
+//     // Extract required field from message
+//     for (let field of fields) {
+//       if (message.includes(field)) {
+//         req.session.userData[field] = message.split(field)[1].trim();
+//         break;
+//       }
+//     }
+
+//     const response = await axios.post(
+//       'https://api.openai.com/v1/chat/completions',
+//       {
+//         model: 'gpt-3.5-turbo',
+//         messages: [
+//           { role: 'system', content: 'You are a helpful assistant finding the detail of a car.' },
+//           { role: 'assistant', content: `Here are the valid inputs for the car details: ${JSON.stringify(validInputs)}`},
+//           { role: 'user', content: message },
+//         ],
+//       },
+//       {
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+//         },
+//       }
+//     );
+
+//     console.log('OpenAI API response:', response.data);
+
+//     const { choices } = response.data;
+
+//     if (choices && choices.length > 0) {
+//       const reply = response.data.choices[0].message.content;
+//       if (reply) {
+//         console.log('Generated reply:', reply);
+//         res.json({ reply });
+//       } else {
+//         console.log('No reply generated.');
+//         res.status(500).send('No reply generated.');
+//       }
+//     } else {
+//       console.log('No reply generated.');
+//       res.status(500).send('No reply generated.');
+//     }                
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send('An error occurred.');
+//   }
+// });
 
 
 app.get("*", (req, res) => {

@@ -204,32 +204,35 @@ app.post("/password-reset", async (req, res) => {
     }
   });
 
-
-  if (!user) {
-    return res.render("tokenExpired");
-  }
-
-  res.render("ActualResetPage", { token: token });
-
-
-app.post("/protected-reset", async (req, res) => {
-  const token = req.body.token;
-  const user = await userCollection.findOne({ passwordResetToken: token });
-
-  if (!user) {
-    return res.send("Error: Invalid or expired token.");
-  }
-
-  const password = req.body.password;
-  const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-  await userCollection.updateOne(
-    { _id: user._id },
-    { $set: { password: hashedPassword }, $unset: { passwordResetToken: "" } }
-  );
-
-  res.render("passwordResetSuccess");
-});
+  app.get('/protected-reset', async (req, res) => {
+    const token = req.query.token;
+    const user = await userCollection.findOne({ passwordResetToken: token });
+  
+    if (!user) {
+      return res.render("tokenExpired");
+    }
+  
+    res.render('ActualResetPage', { token: token });
+  });
+  
+  app.post('/protected-reset', async (req, res) => {
+    const token = req.body.token;
+    const user = await userCollection.findOne({ passwordResetToken: token });
+  
+    if (!user) {
+      return res.send('Error: Invalid or expired token.');
+    }
+  
+    const password = req.body.password;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+    await userCollection.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
+    );
+  
+    res.render("passwordResetSuccess");
+  });
 
 app.get("/nosql-injection", async (req, res) => {
   var username = req.query.user;

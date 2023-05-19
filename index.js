@@ -1,12 +1,14 @@
-require("dotenv").config();
-const express = require("express");
-const session = require("express-session");
-const axios = require("axios");
-const MongoStore = require("connect-mongo");
-const bcrypt = require("bcrypt");
+
+require('dotenv').config();
+const express = require('express');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const bcrypt = require('bcrypt');
 const saltRounds = 12;
-const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const axios = require('axios');
+const axiosRetry = require('axios-retry');
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -42,9 +44,11 @@ const database = require("./databaseConnection.js");
 
 const userCollection = database.db(MONGODB_DATABASE).collection("users");
 
-app.use(express.urlencoded({ extended: false }));
-app.set("views", __dirname + "/views");
-app.use(express.static(__dirname + "/../public"));
+app.use(express.urlencoded({extended: true}));
+app.set('views', __dirname + '/views');
+app.use(express.static(__dirname + '/public'));
+app.use(express.json());
+app.use(express.static(__dirname + '/js'));
 
 var mongoStore = MongoStore.create({
   mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/test`,
@@ -140,9 +144,66 @@ app.post("/password-reset", async (req, res) => {
   });
 });
 
-app.get("/protected-reset", async (req, res) => {
-  const token = req.query.token;
-  const user = await userCollection.findOne({ passwordResetToken: token });
+  app.get('/chat', async (req, res) => {
+
+    if (!req.session.authenticated){
+        res.redirect('/login');
+        return;
+    }
+
+    res.render("chatbot");
+  });
+
+  axiosRetry(axios, {
+    retries: 3,
+    retryDelay: axiosRetry.exponentialDelay,
+  });
+  
+  app.post('/chat', async (req, res) => {
+    try {
+      const { message } = req.body;
+      console.log('Received message:', message);
+  
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
+            { role: 'user', content: message },
+          ],
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+        }
+      );
+  
+      console.log('OpenAI API response:', response.data);
+  
+      const { choices } = response.data;
+  
+      if (choices && choices.length > 0) {
+        const reply = response.data.choices[0].message.content;
+        if (reply) {
+          console.log('Generated reply:', reply);
+          res.json({ reply });
+        } else {
+          console.log('No reply generated.');
+          res.status(500).send('No reply generated.');
+        }
+      } else {
+        console.log('No reply generated.');
+        res.status(500).send('No reply generated.');
+      }                
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('An error occurred.');
+    }
+  });
+
 
   if (!user) {
     return res.render("tokenExpired");

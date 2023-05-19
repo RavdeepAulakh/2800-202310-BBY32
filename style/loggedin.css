@@ -1,0 +1,11 @@
+@media (max-width: 767px) {
+    .grid {
+      grid-template-columns: 1fr; /* Stack cards vertically on mobile */
+    }
+    .flex-col {
+      height: auto; /* Adjust container height on mobile */
+    }
+    #lastcard {
+      margin-bottom: 20px; /* Add margin-bottom to create space between last card and footer */
+    }
+  }

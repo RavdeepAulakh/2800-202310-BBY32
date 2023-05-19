@@ -210,7 +210,7 @@ app.post("/password-reset", async (req, res) => {
   }
 
   res.render("ActualResetPage", { token: token });
-});
+
 
 app.post("/protected-reset", async (req, res) => {
   const token = req.body.token;

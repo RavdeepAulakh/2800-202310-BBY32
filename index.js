@@ -448,6 +448,7 @@ app.get("/predict", (req, res) => {
     input = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
     console.log(input);
     
+    // http://moilvqxphf.eu09.qoddiapp.com/predict
     axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
         input: input
     })
@@ -457,6 +458,7 @@ app.get("/predict", (req, res) => {
     })
     .catch(function (error) {
         console.log(error);
+        res.render("errorMessage", {message: "Error predicting price"});
     })
 });
 

@@ -1,0 +1,60 @@
+<script>
+    var avatars = <%- JSON.stringify(avatars) %>;
+    
+    document.getElementById('profilePictureModal').addEventListener('click', function() {
+        var modalBody = document.getElementById('profilePictureModalBody');
+        modalBody.innerHTML = '';
+        var container = document.createElement('div');
+        container.className = "container text-center";
+        modalBody.appendChild(container);
+        
+        avatars.forEach((avatar, index) => {
+            if (index % 3 === 0) {
+                var row = document.createElement('div')
+                row.className = "row row-cols-3"; 
+                container.appendChild(row);
+            }
+            
+            var col = document.createElement('div');
+            col.className = "col";
+            var img = document.createElement('img');
+            img.src = avatar.url;
+            img.className = "rounded-circle avatarImage"; // Changed id to class
+            img.alt = avatar.name;
+            img.style = "width: 150px;";
+            img.dataset.url = avatar.url; // Store the URL in a dataset attribute
+            col.appendChild(img);
+            
+            container.lastElementChild.appendChild(col);
+        });
+    });
+    
+    // Added event delegation to handle click events on dynamically created avatar images
+    document.getElementById('profilePictureModalBody').addEventListener('click', function(e) {
+        if(e.target && e.target.classList.contains('avatarImage')) {
+            changeAvatar(e.target.dataset.url);
+        }
+    });
+    
+    function changeAvatar(url) {
+        fetch('/changeAvatar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({url: url})
+        }).then(res => res.json()).then(data => {
+            if(data.success) {
+                document.querySelector('.rounded-circle').src = url;
+                var bootstrapModal = bootstrap.Modal.getInstance(document.getElementById('exampleModal'));
+                bootstrapModal.hide();
+            } else {
+                console.error('Error changing avatar:', data.error);
+            }
+        }).catch(err => {
+            console.error('Error changing avatar:', err);
+        });
+    }
+    
+</script>
+    

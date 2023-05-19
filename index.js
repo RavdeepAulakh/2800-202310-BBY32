@@ -352,21 +352,6 @@ app.post("/submitUser", async (req, res) => {
   var email = req.body.email;
   var bioStart = "I am a member of the Cargain app!";
 
-  if (!email) {
-    return res.render("submitError", { message: "Email cannot be blank" });
-  }
-  if (!password) {
-    return res.render("submitError", { message: "Password cannot be blank" });
-  }
-  if (!username) {
-    return res.render("submitError", { message: "Username cannot be blank" });
-  }
-  const schema = Joi.object({
-    username: Joi.string().alphanum().max(20).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().max(20).required(),
-  });
-
     if (!email){
         return res.render("submitError", {message: "Email cannot be blank"});
     }
@@ -464,48 +449,28 @@ app.get('/userProfile', async (req, res) => {
   }
   const avatars = await avatarCollection.find().toArray();
   res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars})
-})
 
   let updateSchema;
+  let validationResult;
 
-    let updateSchema;
-    let validationResult;
-
-    if (newUserName) {
-        updateSchema = Joi.string().alphanum().max(20);
-        validationResult = updateSchema.validate(newUserName);
-    } 
-    if (newBio) {
-        updateSchema = Joi.string().max(250);
-        validationResult = updateSchema.validate(newBio);
-    } 
-    
-    if (newEmail) {
-        updateSchema = Joi.string().email();
-        validationResult = updateSchema.validate(newEmail);
-    }
-  } else if (newBio) {
+  if (newUserName) {
+    updateSchema = Joi.string().alphanum().max(20);
+    validationResult = updateSchema.validate(newUserName);
+  } 
+  if (newBio) {
     updateSchema = Joi.string().max(250);
-    const validationResult = updateSchema.validate(newBio);
-    if (validationResult.error) {
-      console.log(validationResult.error);
-      res.render("errorMessage", { message: "Update failed, try again" });
-      return;
-    if (validationResult.error) {
-      console.log(validationResult.error);
-      res.render("errorMessage", {message: "Update failed, try again"});
-      return;
+    validationResult = updateSchema.validate(newBio);
+  } 
+    
+  if (newEmail) {
+    updateSchema = Joi.string().email();
+    validationResult = updateSchema.validate(newEmail);
   }
 
-    }
-  } else if (newEmail) {
-    updateSchema = Joi.string().email();
-    const validationResult = updateSchema.validate(newEmail);
-    if (validationResult.error) {
-      console.log(validationResult.error);
-      res.render("errorMessage", { message: "Update failed, try again" });
-      return;
-    }
+  if (validationResult.error) {
+    console.log(validationResult.error);
+    res.render("errorMessage", { message: "Update failed, try again" });
+    return;
   }
 
   const filter = { username: req.session.username, email: req.session.email };
@@ -514,6 +479,16 @@ app.get('/userProfile', async (req, res) => {
   if (newUserName) {
     update.username = newUserName;
   }
+
+  if (newBio) {
+    update.bio = newBio;
+  }
+
+  if (newEmail) {
+    update.email = newEmail;
+  }
+
+  await userCollection.updateMany(filter, { $set: update });
 
     // Handle session and redirect as needed
     req.session.username = newUserName || req.session.username;

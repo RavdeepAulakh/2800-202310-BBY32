@@ -1,19 +1,19 @@
 <%- include("templates/header") %>
 <section>
     <div class="row">
-        <div class="col-lg-4">
+        <div class="col-lg-4 option">
             <div class="card mb-4">
                 <div class="card-body text-center">
                     <img src="<%= avatar %>" alt="avatar" class="rounded-circle mx-auto" style="width: 150px;">
                     <h5 class="my-3"><%= user %></h5>
                     <div class="d-flex justify-content-center mb-2">
-                        <button id="profilePictureModal" type="button" class="btn btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#exampleModal"> Change profile picture </button>
+                        <button id="profilePictureModal" type="button" class="btn btn-primary rounded-pill px-3 hov" data-bs-toggle="modal" data-bs-target="#exampleModal"> Change profile picture </button>
                     </div>
                 </div>
             </div>
 
         </div>
-        <div class="col-lg-8">
+        <div class="col-lg-8 option">
             <form action='/updateInfo' method='post'>
             <div class="card mb-4">
                 <div class="card-body">
@@ -30,7 +30,7 @@
                                     placeholder="<%= user %>"
                                 />
                                 <button
-                                    class="btn btn-outline-secondary"
+                                    class="btn btn-outline-secondary hov"
                                     type="submit"
                                 >
                                     Update
@@ -53,7 +53,7 @@
                                     placeholder="<%= email %>"
                                 />
                                 <button
-                                    class="btn btn-outline-secondary"
+                                    class="btn btn-outline-secondary hov"
                                     type="submit"
                                 >
                                     Update
@@ -72,7 +72,7 @@
                                 <textarea class="form-control" name="bio" placeholder="<%= bio %>" ></textarea>
                                 <br>
                                 <button
-                                    class="btn btn-outline-secondary"
+                                    class="btn btn-outline-secondary hov"
                                     type="submit"
                                 >
                                     Update

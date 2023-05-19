@@ -670,6 +670,40 @@ app.post('/priceChat', async (req, res) => {
 //   }
 // });
 
+app.get('/modelChat', (req, res) => {
+  res.render('modelchat', { initialMessage: "Tell me what you look for in a car." });
+});
+
+app.post('/modelChat', async (req, res) => {
+  const { message } = req.body;  // User's message
+  
+  try {
+    // Call to OpenAI API
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a assistant helping the user in finding some car model to consider' },
+          { role: 'user', content: message },
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+
+    const reply = response.data.choices[0].message.content;
+    res.json({ reply });  // Send the assistant's reply back to the client
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred.');
+  }
+});
+
 
 app.get("*", (req, res) => {
   res.status(404);

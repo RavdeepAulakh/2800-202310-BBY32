@@ -51,6 +51,7 @@ app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(express.static(__dirname + '/js'));
+app.use(express.static(__dirname + '/style'));
 
 var mongoStore = MongoStore.create({
 	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`,
@@ -454,7 +455,7 @@ app.post('/updateInfo', async (req,res) => {
   const newBio = req.body.bio;
   const newEmail = req.body.email;
   let updateSchema;
-  let validationResult;
+  let validationResult = {error: null};
 
   if (newUserName) {
     updateSchema = Joi.string().alphanum().max(20);

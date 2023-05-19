@@ -1,4 +1,5 @@
 <%- include("templates/header") %>
+<link rel="stylesheet" href="/loggedin.css">
 <div class="flex flex-col items-center justify-center h-screen">
   <div class="message-container">
   <h1 class="text-4xl font-bold mb-8 text-center hello-message">Hello <%= username %>, Welcome to Cargain!</h1>
@@ -16,7 +17,7 @@
       <img src="/person.svg" alt="Icon 3" class="w-16 h-16 mx-auto mb-4">
       <h2 class="text-2xl font-bold mt-4">Profile</h2>
     </a>
-    <a href="#" class="bg-white rounded-lg shadow-md p-8 text-center hov">
+    <a href="#" class="bg-white rounded-lg shadow-md p-8 text-center hov" id="lastcard">
       <img src="/garage-home.svg" alt="Icon 4" class="w-16 h-16 mx-auto mb-4">
       <h2 class="text-2xl font-bold mt-4">My Garage</h2>
     </a>

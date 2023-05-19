@@ -101,11 +101,7 @@ function adminAuthorization(req, res, next) {
   }
 }
 
-app.get("/", (req, res) => {
-  if (req.session.authenticated) {
-    res.redirect("/loggedin");
-    return;
-  }
+app.get("/",sessionValidation, (req, res) => {
   res.render("index");
 });
 
@@ -437,11 +433,7 @@ app.post("/loggingin", async (req, res) => {
   }
 });
 
-app.get("/loggedin", (req, res) => {
-  if (!req.session.authenticated) {
-    res.redirect("/");
-    return;
-  }
+app.get("/loggedin", sessionValidation, (req, res) => {
   res.render("loggedin", { username: req.session.username });
 });
 
@@ -450,11 +442,7 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
-app.get('/userProfile', async (req, res) => {
-  if (!req.session.authenticated) {
-    res.redirect('/');
-    return;
-  }
+app.get('/userProfile', sessionValidation, async (req, res) => {
   const avatars = await avatarCollection.find().toArray();
   res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars})
 });

@@ -1,108 +1,101 @@
 <%- include("templates/header") %>
-<section>
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card mb-4">
-                <div class="card-body text-center">
-                    <img src="<%= avatar %>" alt="avatar" class="rounded-circle mx-auto" style="width: 150px;">
-                    <h5 class="my-3"><%= user %></h5>
-                    <div class="d-flex justify-content-center mb-2">
-                        <button id="profilePictureModal" type="button" class="btn btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#exampleModal"> Change profile picture </button>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-        <div class="col-lg-8">
-            <form action='/updateInfo' method='post'>
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Username</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <div class="input-group">
-                                <input
-                                    type="text"
-                                    name="username"
-                                    class="form-control"
-                                    placeholder="<%= user %>"
-                                />
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="submit"
-                                >
-                                    Update
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <br />
-                    <br />
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Email</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <div class="input-group">
-                                <input
-                                    type="email"
-                                    name="email"
-                                    class="form-control"
-                                    placeholder="<%= email %>"
-                                />
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="submit"
-                                >
-                                    Update
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <br />
-                    <br />
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Bio</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <div class="form-outline">
-                                <textarea class="form-control" name="bio" placeholder="<%= bio %>" ></textarea>
-                                <br>
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="submit"
-                                >
-                                    Update
-                                </button>
-                            </div>
+    <section>
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <img src="<%= avatar %>" alt="avatar" class="rounded-circle mx-auto" style="width: 150px;">
+                        <h5 class="my-3">
+                            <%= user %>
+                        </h5>
+                        <div class="d-flex justify-content-center mb-2">
+                            <button id="profilePictureModal" type="button"
+                                class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                data-bs-toggle="modal" data-bs-target="#avatarModal"> Change profile picture </button>
                         </div>
                     </div>
                 </div>
             </div>
-            </form>
+            <div class="col-lg-8">
+                <form action='/updateInfo' method='post'>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="mb-0">Username</p>
+                                </div>
+                                <div class="col-sm-9">
+                                    <div class="input-group">
+                                        <input type="text" name="username" class="form-control"
+                                            placeholder="<%= user %>" />
+                                        <button
+                                            class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                            type="submit">
+                                            Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <br />
+                            <br />
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="mb-0">Email</p>
+                                </div>
+                                <div class="col-sm-9">
+                                    <div class="input-group">
+                                        <input type="email" name="email" class="form-control"
+                                            placeholder="<%= email %>" />
+                                        <button
+                                            class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                            type="submit">
+                                            Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <br />
+                            <br />
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <p class="mb-0">Bio</p>
+                                </div>
+                                <div class="col-sm-9">
+                                    <div class="form-outline">
+                                        <textarea class="form-control" name="bio" placeholder="<%= bio %>"></textarea>
+                                        <br>
+                                        <button
+                                            class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                            type="submit">
+                                            Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+    <!-- Modal -->
+    <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="avatarModalLabel">Change your profile picture!</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="profilePictureModalBody" class="modal-body">
+                    ...
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                        class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
-</section>
-  <!-- Modal -->
-  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalLabel">Change your profile picture!</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div id="profilePictureModalBody" class="modal-body">
-          ...
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Save changes</button>
-        </div>
-      </div>
-    </div>
-  </div>
-<%- include("scripts/profilePic") %>
-<%- include("templates/footer") %>
+    <%- include("scripts/profilePic") %>
+        <%- include("templates/footer") %>

@@ -1,0 +1,48 @@
+<%- include("templates/header") %>
+<body>
+    <div class="max-w-md mx-auto bg-gray-200 rounded-lg p-4 mt-16 flex flex-col items-center"> <!-- Added 'mt-16' class for top margin -->
+        <h1 class="text-2xl mb-4">Price bot</h1>
+        <div id="chat-container" class="flex flex-col gap-2 items-start"></div>
+        <form id="message-form" class="flex gap-2 mt-4">
+          <input id="message-input" type="text" class="flex-1 border-gray-300 border p-2 rounded" placeholder="Type your message...">
+          <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">Send</button>
+        </form>
+      </div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const chatContainer = document.getElementById('chat-container');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+
+    messageForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = messageInput.value.trim();
+      if (message !== '') {
+        appendMessage('user', message);
+        messageInput.value = '';
+
+        try {
+          const response = await axios.post('/priceChat', { message });
+          const reply = response.data.reply;
+          appendMessage('assistant', reply);
+        } catch (error) {
+          console.error(error);
+          appendMessage('assistant', 'An error occurred.');
+        }
+      }
+    });
+
+    function appendMessage(role, content) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('rounded', 'p-2');
+      messageElement.textContent = content;
+      if (role === 'user') {
+        messageElement.classList.add('bg-purple-600', 'text-white', 'self-end'); <!-- Changed 'bg-blue-500' to 'bg-purple-600' -->
+      } else {
+        messageElement.classList.add('bg-gray-300', 'self-start');
+      }
+      chatContainer.appendChild(messageElement);
+    }
+  </script>
+</body>
+</html>

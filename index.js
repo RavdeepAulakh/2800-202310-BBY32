@@ -568,8 +568,8 @@ app.post('/priceChat', async (req, res) => {
       {
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: 'You are a helpful assistant finding the following detail of a car to redirect the user. year, manufacturer, model, condition, odometer, title_status, paint_color' },
-          { role: 'assistant', content: `Here are the valid inputs for the car details: `},
+          { role: 'system', content: 'You are a helpful assistant gathering the following detail of a car to redirect the user. year, manufacturer, model, condition, odometer, title_status, paint_color' },
+          { role: 'system', content: 'Once you have all the details, redirect the user to /predict' },
           ...chatHistory,  // Include the entire chat history
         ],
       },

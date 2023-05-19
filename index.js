@@ -455,7 +455,7 @@ app.post('/updateInfo', async (req,res) => {
   const newBio = req.body.bio;
   const newEmail = req.body.email;
   let updateSchema;
-  let validationResult;
+  let validationResult = {error: null};
 
   if (newUserName) {
     updateSchema = Joi.string().alphanum().max(20);

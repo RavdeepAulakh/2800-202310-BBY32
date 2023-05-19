@@ -3,7 +3,8 @@ import joblib
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.multioutput import MultiOutputClassifier
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
 
@@ -102,7 +103,7 @@ def train_model(data, model_filename):
     joblib.dump(model, ("./models/" + model_filename))
 
 
-def use_model(model_filename, input_string):
+def price_model(model_filename, input_string):
     """
     Uses the model to predict the price of a car
     :param model_filename: The filename of the model
@@ -127,7 +128,7 @@ def main():
     # data = preprocess_data(data)
     # train_model(data, 'price_prediction.joblib')
 
-    predicted_price = use_model('./models/price_prediction.joblib',
+    predicted_price = price_model('./models/price_prediction.joblib',
                                 '2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1')
     print(f'Predicted price: {predicted_price[0]}')
 

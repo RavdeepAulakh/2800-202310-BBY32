@@ -25,7 +25,8 @@
         "express-sessions": "^1.0.6",
         "joi": "^17.9.2",
         "nodemailer": "^6.9.2",
-        "openai": "^3.2.1"
+        "openai": "^3.2.1",
+        "python-shell": "^5.0.0"
     },
     "devDependencies": {
         "tailwindcss": "^3.3.2"

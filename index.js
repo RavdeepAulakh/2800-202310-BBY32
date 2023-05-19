@@ -408,11 +408,17 @@ app.post("/loggingin", async (req, res) => {
 	if (result.length != 1) {
 		console.log("user not found");
 		res.render("loginfail");
+    return;
+  }
+
+  if (await bcrypt.compare(password, result[0].password)) {
+    req.session.authenticated = true;
+    req.session.email = email;
     req.session.username = result[0].username;;
     req.session.user_type = result[0].user_type;
     req.session.bio = result[0].bio;
     req.session.avatar = result[0].avatar;
-	req.session.cookie.maxAge = expireTime;
+	  req.session.cookie.maxAge = expireTime;
 
     res.redirect("/loggedin");
     return;
@@ -434,14 +440,6 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
-app.get("/userProfile", (req, res) => {
-  res.render("userProfile", {
-    user: req.session.username,
-    email: req.session.email,
-    bio: req.session.bio,
-  });
-});
-
 app.get('/userProfile', async (req, res) => {
   if (!req.session.authenticated) {
     res.redirect('/');
@@ -449,7 +447,12 @@ app.get('/userProfile', async (req, res) => {
   }
   const avatars = await avatarCollection.find().toArray();
   res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars})
+});
 
+app.post('/updateInfo', async (req,res) => {
+  const newUserName = req.body.username;
+  const newBio = req.body.bio;
+  const newEmail = req.body.email;
   let updateSchema;
   let validationResult;
 
@@ -518,19 +521,6 @@ app.post('/changeAvatar', async (req, res) => {
       res.json({ success: false, error: err.message });
     }
   }
-
-  if (newEmail) {
-    update.email = newEmail;
-  }
-
-  await userCollection.updateMany(filter, { $set: update });
-
-  console.log("Updated user");
-  // Handle session and redirect as needed
-  req.session.username = newUserName || req.session.username;
-  req.session.bio = newBio || req.session.bio;
-  req.session.email = newEmail || req.session.email;
-  res.redirect("/loggedin");
 });
 
 app.get("/predict", (req, res) => {

@@ -101,7 +101,11 @@ function adminAuthorization(req, res, next) {
   }
 }
 
-app.get("/",sessionValidation, (req, res) => {
+app.get("/", (req, res) => {
+  if (req.session.authenticated) {
+    res.redirect("/loggedin");
+    return;
+  }
   res.render("index");
 });
 

@@ -1,7 +1,7 @@
 <%- include("templates/header") %>
 <body>
     <div class="max-w-md mx-auto bg-gray-200 rounded-lg p-4 mt-16 flex flex-col items-center option"> <!-- Added 'mt-16' class for top margin -->
-        <h1 class="text-2xl mb-4 option">Your AI Chatbot</h1>
+        <h1 class="text-2xl mb-4 option">Recommendation Chatbot</h1>
         <div id="chat-container" class="flex flex-col gap-2 items-start"></div>
         <form id="message-form" class="flex gap-2 mt-4 option">
           <input id="message-input" type="text" class="flex-1 border-gray-300 border p-2 rounded option" placeholder="Type your message...">
@@ -13,6 +13,9 @@
     const chatContainer = document.getElementById('chat-container');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
+
+    appendMessage('assistant', 'Tell me about what you look for in a car.');
+
 
     messageForm.addEventListener('submit', async (event) => {
       event.preventDefault();

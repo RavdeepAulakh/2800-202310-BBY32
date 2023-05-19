@@ -162,10 +162,15 @@ app.post("/password-reset", async (req, res) => {
     retryDelay: axiosRetry.exponentialDelay,
   });
   
+  let chatHistory = [];  // Variable to store the chat history
+
   app.post('/chat', async (req, res) => {
     try {
       const { message } = req.body;
       console.log('Received message:', message);
+  
+      // Add the user's message to the chat history
+      chatHistory.push({ role: 'user', content: message });
   
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
@@ -173,7 +178,7 @@ app.post("/password-reset", async (req, res) => {
           model: 'gpt-3.5-turbo',
           messages: [
             { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
-            { role: 'user', content: message },
+            ...chatHistory,  // Include the entire chat history
           ],
         },
         {
@@ -191,6 +196,9 @@ app.post("/password-reset", async (req, res) => {
       if (choices && choices.length > 0) {
         const reply = response.data.choices[0].message.content;
         if (reply) {
+          // Add the assistant's reply to the chat history
+          chatHistory.push({ role: 'assistant', content: reply });
+  
           console.log('Generated reply:', reply);
           res.json({ reply });
         } else {
@@ -200,12 +208,13 @@ app.post("/password-reset", async (req, res) => {
       } else {
         console.log('No reply generated.');
         res.status(500).send('No reply generated.');
-      }                
+      }
     } catch (error) {
       console.error(error);
       res.status(500).send('An error occurred.');
     }
   });
+  
 
   app.get('/protected-reset', async (req, res) => {
     const token = req.query.token;

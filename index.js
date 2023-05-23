@@ -40,7 +40,7 @@ const {
 
 /* END secret section */
 
-const database = require("./databaseConnection.js");
+const database = require("./js/databaseConnection.js");
 
 const userCollection = database.db(MONGODB_DATABASE).collection("users");
 

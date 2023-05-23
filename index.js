@@ -362,44 +362,56 @@ app.post("/submitUser", async (req, res) => {
   var email = req.body.email;
   var bioStart = "I am a member of the Cargain app!";
 
-    if (!email){
-        return res.render("submitError", {message: "Email cannot be blank"});
-    }
-    if(!password){
-        return res.render("submitError", {message: "Password cannot be blank"});
-    }
-    if(!username){
-        return res.render("submitError", {message: "Username cannot be blank"});
-    }
-	const schema = Joi.object(
-		{
-			username: Joi.string().alphanum().max(20).required(),
-      email: Joi.string().email().required(),
-			password: Joi.string().max(20).required()
-		});
-	
-	const validationResult = schema.validate({username, password, email});
-	if (validationResult.error != null) {
-	   console.log(validationResult.error);
-	   res.redirect("/createUser");
-	   return;
-   }
+  if (!email) {
+    return res.render("submitError", { message: "Email cannot be blank" });
+  }
+  if (!password) {
+    return res.render("submitError", { message: "Password cannot be blank" });
+  }
+  if (!username) {
+    return res.render("submitError", { message: "Username cannot be blank" });
+  }
+
+  const schema = Joi.object({
+    username: Joi.string().alphanum().max(20).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().max(20).required(),
+  });
+
+  const validationResult = schema.validate({ username, password, email });
+  if (validationResult.error != null) {
+    console.log(validationResult.error);
+    res.redirect("/createUser");
+    return;
+  }
+
+  const existingUser = await userCollection.findOne({ email: email });
+  if (existingUser) {
+    return res.render("createUserFail");
+  }
 
   var hashedPassword = await bcrypt.hash(password, saltRounds);
-	// Adding avatar to the user document
+  // Adding avatar to the user document
   const avatar = await avatarCollection.aggregate([{ $sample: { size: 1 } }]).next();
   const avatarURL = avatar ? avatar.url : '';
 
-	await userCollection.insertOne({username: username, password: hashedPassword, email: email, bio: bioStart, avatar: avatarURL});
-	console.log("Inserted user");
-    req.session.username = username;
-    req.session.authenticated = true;
-    req.session.email = email;
-    req.session.bio = bioStart;
-    req.session.cookie.maxAge = expireTime;
-    req.session.avatar = avatarURL;
-    res.redirect('/loggedin');
+  await userCollection.insertOne({
+    username: username,
+    password: hashedPassword,
+    email: email,
+    bio: bioStart,
+    avatar: avatarURL,
+  });
+  console.log("Inserted user");
+  req.session.username = username;
+  req.session.authenticated = true;
+  req.session.email = email;
+  req.session.bio = bioStart;
+  req.session.cookie.maxAge = expireTime;
+  req.session.avatar = avatarURL;
+  res.redirect('/loggedin');
 });
+
 
 app.post("/loggingin", async (req, res) => {
   var email = req.body.email;

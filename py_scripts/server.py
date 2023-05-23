@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
+import difflib
 import joblib
+import json
 import pandas as pd
 import os
 from sklearn.preprocessing import LabelEncoder
@@ -27,6 +29,10 @@ paint_color_encoder = joblib.load(paint_color_filename)
 imputer_filename = os.path.join(script_dir, "models/imputers/price_imputer.joblib")
 imputer = joblib.load(imputer_filename)
 
+valid_inputs_filename = os.path.join(script_dir, "valid_inputs.json")
+with open(valid_inputs_filename, 'r') as f:
+    valid_inputs = json.load(f)
+
 app = Flask(__name__)
 
 
@@ -36,7 +42,17 @@ def preprocess_input(data):
     :param data: The data to be processed
     :return: The processed data
     """
+    print(data)
+    for column in data.columns:
+        # print(column)
+        if column in valid_inputs:
+            # print(data[column][0])
+            # print(difflib.get_close_matches(data[column][0], valid_inputs[column], n=1))
+            # data[column][0] = difflib.get_close_matches(data[column][0], valid_inputs[column], n=1)[0]
+            close_match = difflib.get_close_matches(data[column][0], valid_inputs[column], n=1)
+            data[column][0] = close_match[0] if close_match else float('NaN')
 
+    print(data)
     data['manufacturer'] = manufacturer_encoder.transform(data['manufacturer'].astype(str))
     data['model'] = model_encoder.transform(data['model'].astype(str))
     data['condition'] = condition_encoder.transform(data['condition'].astype(str))

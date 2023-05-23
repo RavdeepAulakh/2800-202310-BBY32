@@ -9,7 +9,6 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
-const fs = require('fs');
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -19,8 +18,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
-
-let validInputs = JSON.parse(fs.readFileSync('valid_inputs.json', 'utf-8'));
 
 const port = process.env.PORT || 3000;
 
@@ -512,9 +509,10 @@ app.post("/updateInfo", async (req, res) => {
 
 app.get("/predict", (req, res) => {
     const input = req.body.input;
-    const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
-    // test = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
+    // const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
+    test = "2015,honda,civi si coupe 2d,excellent,70000,clean,red,2021,1";
     console.log(input);
+    formatted = test;
     
     axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
         input: formatted
@@ -569,6 +567,7 @@ app.post('/priceChat', async (req, res) => {
         model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: 'You are a helpful assistant gathering the following detail of a car to redirect the user. year, manufacturer, model, condition, odometer, title_status, paint_color' },
+          { role: 'system', content: 'If the user dosen`t know a detail of the car, give the user some help on how to find out' },
           { role: 'system', content: 'Once you have all the details, redirect the user to /predict' },
           ...chatHistory,  // Include the entire chat history
         ],
@@ -591,6 +590,7 @@ app.post('/priceChat', async (req, res) => {
 });
 
 app.get('/modelChat', (req, res) => {
+  
   res.render('modelchat', { initialMessage: "Tell me what you look for in a car." });
 });
 

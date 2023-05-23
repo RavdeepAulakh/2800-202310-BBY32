@@ -1,4 +1,4 @@
-
+// All the diffrent libraries we need to use
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
@@ -21,9 +21,11 @@ const transporter = nodemailer.createTransport({
 
 const port = process.env.PORT || 3000;
 
+// view engine
 const app = express();
 app.set("view engine", "ejs");
 
+//server side input validation
 const Joi = require("joi");
 
 const expireTime = 1 * 60 * 60 * 1000; //expires after 1 hour  (hours * minutes * seconds * millis)
@@ -40,7 +42,7 @@ const {
 
 /* END secret section */
 
-const database = require("./databaseConnection.js");
+const database = require("./js/databaseConnection.js");
 
 const userCollection = database.db(MONGODB_DATABASE).collection("users");
 

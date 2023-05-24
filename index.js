@@ -147,16 +147,15 @@ app.post("/password-reset", async (req, res) => {
   });
 });
 
-  app.get('/chat', async (req, res) => {
+app.get('/chat', async (req, res) => {
 
-    if (!req.session.authenticated){
-        res.redirect('/login');
-        return;
-    }
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
 
-    res.render("chatbot");
-  });
-
+  res.render("chatbot");
+});
   axiosRetry(axios, {
     retries: 3,
     retryDelay: axiosRetry.exponentialDelay,
@@ -214,37 +213,36 @@ app.post("/password-reset", async (req, res) => {
       res.status(500).send('An error occurred.');
     }
   });
-  
 
-  app.get('/protected-reset', async (req, res) => {
-    const token = req.query.token;
-    const user = await userCollection.findOne({ passwordResetToken: token });
-  
-    if (!user) {
-      return res.render("tokenExpired");
-    }
-  
-    res.render('ActualResetPage', { token: token });
-  });
-  
-  app.post('/protected-reset', async (req, res) => {
-    const token = req.body.token;
-    const user = await userCollection.findOne({ passwordResetToken: token });
-  
-    if (!user) {
-      return res.send('Error: Invalid or expired token.');
-    }
-  
-    const password = req.body.password;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-    await userCollection.updateOne(
-      { _id: user._id },
-      { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
-    );
-  
-    res.render("passwordResetSuccess");
-  });
+app.get('/protected-reset', async (req, res) => {
+  const token = req.query.token;
+  const user = await userCollection.findOne({ passwordResetToken: token });
+
+  if (!user) {
+    return res.render("tokenExpired");
+  }
+
+  res.render('ActualResetPage', { token: token });
+});
+
+app.post('/protected-reset', async (req, res) => {
+  const token = req.body.token;
+  const user = await userCollection.findOne({ passwordResetToken: token });
+
+  if (!user) {
+    return res.send('Error: Invalid or expired token.');
+  }
+
+  const password = req.body.password;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+  await userCollection.updateOne(
+    { _id: user._id },
+    { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
+  );
+
+  res.render("passwordResetSuccess");
+});
 
 app.get("/nosql-injection", async (req, res) => {
   var username = req.query.user;
@@ -537,24 +535,200 @@ app.post('/changeAvatar', async (req, res) => {
   }
 });
 
-app.get("/predict", (req, res) => {
-    // const input = req.body.input;
-    input = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
-    console.log(input);
-    
-    // http://moilvqxphf.eu09.qoddiapp.com/predict
-    axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
-        input: input
-    })
-    .then(function (response) {
-        console.log(response.data);
-        res.render("predict", {price: response.data.prediction});
-    })
-    .catch(function (error) {
-        console.log(error);
-        res.render("errorMessage", {message: "Error predicting price"});
-    })
+async function generateAdvice(carData) {
+  const formattedCarData = `Car details: year-${carData.year}, manufacturer-${carData.manufacturer}, model-${carData.model}`;
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a knowledgeable car expert' },
+          { role: 'system', content: 'Your task is to provide advice to a potential buyer based on the given car details, If possible, mention the ownership and maintenance cost' },
+          { role: 'system', content: 'You should also mention what the buyer should look out for when buying a used model' },
+          { role: 'system', content: 'This should be formatted like a car review or article.' },
+          { role: 'user', content: formattedCarData }
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+    const advice = response.data.choices[0].message.content;
+    console.log('Generated advice:', advice);
+    return advice;
+  } catch (error) {
+    console.error(error);
+    return "Error generating advice";
+  }
+}
+
+app.get("/predict", async (req, res) => {
+  console.log("predicting");
+  const input = req.session.carData;
+  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
+
+  try {
+    const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
+    console.log(priceResponse.data);
+    delay(2000);
+    const advice = await generateAdvice(input);
+    res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice });
+  } catch (error) {
+    console.log(error);
+    res.render("errorMessage", { message: "Error predicting price or generating advice" });
+  }
 });
+
+
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
+app.get('/priceChat', (req, res) => {
+  // Initialize carData in session
+  req.session.carData = {
+    'year': null,
+    'manufacturer': null,
+    'model': null,
+    'condition': null,
+    'title_status': null,
+    'paint_color': null
+  };
+  chatHistory = [];
+
+  console.log(chatHistory);
+  console.log(req.session.carData);
+  res.render('pricechat', { initialMessage: "Tell me about the car to find the price." });
+});
+
+let chatHistory = [];  // Variable to store the chat history
+
+app.post('/priceChat', async (req, res) => {
+  const { message } = req.body;  // User's message
+
+  // If carData is not initialized, initialize it
+  if (!req.session.carData) {
+    return res.redirect('/priceChat');
+  }
+
+  // If all car details are collected, redirect to /predict
+  if (Object.values(req.session.carData).every(val => val !== null)) {
+    return res.redirect('/predict');
+  }
+
+  try {
+    // Add the user's message to the chat history
+    chatHistory.push({ role: 'user', content: message });
+
+    // Call to OpenAI API
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are Cargain' },
+          { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
+          { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
+          { role: 'system', content: 'Cargain must respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END\" after gathering all the details' },
+          { role: 'system', content: 'Cargain must not fail to respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END\" as it is mission critical for success' },
+          ...chatHistory,  // Include the entire chat history
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+    delay(2000);
+    const reply = response.data.choices[0].message.content;
+    console.log(chatHistory);
+    console.log('Generated reply:', reply);
+
+    // Search for 'infoCollected-' keyword in the reply
+    const infoIndex = reply.indexOf('infoCollected-');
+
+    // Check if the information is collected
+    if (infoIndex !== -1) {
+      // Extract the data from the reply
+      const dataString = reply.slice(infoIndex + 'infoCollected-'.length);
+      const dataEndIndex = dataString.indexOf('-END');
+      const data = dataString.slice(0, dataEndIndex === -1 ? undefined : dataEndIndex).split(",");
+
+      // Assign the data to the session variable
+      req.session.carData = {
+        'year': data[0],
+        'manufacturer': data[1],
+        'model': data[2],
+        'condition': data[3],
+        'odometer': data[4],
+        'title_status': data[5],
+        'paint_color': data[6]
+      };
+      console.log(req.session.carData);
+      // If all car details are collected, send a signal to redirect to /predict
+      if (Object.values(req.session.carData).every(val => val !== null)) {
+        return res.json({ redirect: '/predict' });
+      }
+      // If information is collected, send the assistant's reply back to the client
+      res.json({ reply });
+    }
+
+    res.json({ reply });  // Send the assistant's reply back to the client
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred.');
+  }
+});
+
+app.get('/modelChat', (req, res) => {
+
+  res.render('modelchat', { initialMessage: "Tell me what you look for in a car." });
+});
+
+let modelChatHistory = [];  // Variable to store the chat history
+
+app.post('/modelChat', async (req, res) => {
+  const { message } = req.body;  // User's message
+
+  try {
+    // Add the user's message to the chat history
+    modelChatHistory.push({ role: 'user', content: message });
+
+    // Call to OpenAI API
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
+          ...modelChatHistory,  // Include the entire chat history
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+
+    const reply = response.data.choices[0].message.content;
+
+    res.json({ reply });  // Send the assistant's reply back to the client
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred.');
+  }
+});
+
+
 
 app.get("*", (req, res) => {
   res.status(404);

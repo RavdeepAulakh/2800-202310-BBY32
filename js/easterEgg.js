@@ -1,8 +1,12 @@
 let clickCount = 0;
 
+// Function to handle the Easter egg when clicked
 function handleEasterEgg() {
   clickCount++;
+
+  // Check if the Easter egg has been triggered three times
   if (clickCount === 3) {
+    // Create a new image element for the car
     const carImage = document.createElement("img");
     carImage.src = "/car.png";
     carImage.style.position = "absolute";
@@ -12,12 +16,13 @@ function handleEasterEgg() {
 
     // Animate the car across the screen
     const animationDuration = 3000;
-    const carWidth = 100; 
+    const carWidth = 100;
     const startPosition = -carWidth;
     const endPosition = document.documentElement.scrollWidth;
     const distance = endPosition - startPosition;
     const startTime = Date.now();
 
+    // Function to animate the car
     function animateCar() {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / animationDuration, 1);
@@ -31,10 +36,10 @@ function handleEasterEgg() {
       } else {
         // Car has reached or passed the end of the page, remove it
         carImage.remove();
-        clickCount = 0;
+        clickCount = 0; // Reset the click count
       }
     }
 
-    animateCar();
+    animateCar(); // Start the car animation
   }
 }

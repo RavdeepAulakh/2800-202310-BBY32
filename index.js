@@ -174,7 +174,7 @@ app.post('/chat', async (req, res) => {
       {
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about themselves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
+          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about themselves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well' },
           ...chatHistory,  // Include the entire chat history
         ],
       },

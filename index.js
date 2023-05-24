@@ -507,25 +507,55 @@ app.post("/updateInfo", async (req, res) => {
   res.redirect("/loggedin");
 });
 
-app.get("/predict", (req, res) => {
+async function generateAdvice(carData) {
+  const formattedCarData = `Car details: year-${carData.year}, manufacturer-${carData.manufacturer}, model-${carData.model}`;
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a knowledgeable car expert' },
+          { role: 'system', content: 'Your task is to provide advice to a potential buyer based on the given car details, If possible, mention the ownership and maintenance cost' },
+          { role: 'system', content: 'You should also mention what the buyer should look out for when buying a used model' },
+          { role: 'system', content: 'This should be formatted like a car review or article.' },
+          { role: 'user', content: formattedCarData }
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+    const advice = response.data.choices[0].message.content;
+    console.log('Generated advice:', advice);
+    return advice;
+  } catch (error) {
+    console.error(error);
+    return "Error generating advice";
+  }
+}
+
+app.get("/predict", async (req, res) => {
   console.log("predicting");
   const input = req.session.carData;
-  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
-  // test = "2015,honda,civi si coupe 2d,excellent,70000,clean,red,2021,1";
-  console.log(formatted);
+  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
 
-  axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
-    input: formatted
-  })
-    .then(function (response) {
-      console.log(response.data);
-      res.render("predict", { price: response.data.prediction });
-    })
-    .catch(function (error) {
-      console.log(error);
-      res.render("errorMessage", { message: "Error predicting price" });
-    })
+  try {
+    const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
+    console.log(priceResponse.data);
+    delay(2000);
+    const advice = await generateAdvice(input);
+    res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice });
+  } catch (error) {
+    console.log(error);
+    res.render("errorMessage", { message: "Error predicting price or generating advice" });
+  }
 });
+
 
 function delay(time) {
   return new Promise(resolve => setTimeout(resolve, time));

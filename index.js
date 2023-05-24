@@ -494,8 +494,11 @@ app.get("/predict", async (req, res) => {
     // Call external API to predict the car price
     const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
     console.log(priceResponse.data);
-    delay(2000);
+
     // Generate advice based on car details
+
+    delay(3000);
+
     const advice = await generateAdvice(input);
     res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice });
   } catch (error) {
@@ -525,6 +528,7 @@ app.get('/priceChat', (req, res) => {
   console.log(req.session.carData);
   res.render('pricechat', { initialMessage: "Tell me about the car to find the price." });
 });
+
 
 chatHistory = [];  // Variable to store the chat history
 

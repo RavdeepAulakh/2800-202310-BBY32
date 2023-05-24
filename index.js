@@ -508,11 +508,11 @@ app.post("/updateInfo", async (req, res) => {
 });
 
 app.get("/predict", (req, res) => {
-  const input = req.body.input;
-  // const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
-  test = "2015,honda,civi si coupe 2d,excellent,70000,clean,red,2021,1";
-  console.log(input);
-  formatted = test;
+  console.log("predicting");
+  const input = req.session.carData;
+  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
+  // test = "2015,honda,civi si coupe 2d,excellent,70000,clean,red,2021,1";
+  console.log(formatted);
 
   axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
     input: formatted
@@ -576,9 +576,8 @@ app.post('/priceChat', async (req, res) => {
           { role: 'system', content: 'You are Cargain' },
           { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
           { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
-          { role: 'system', content: 'Cargain repeats the collected info to the user to keep them informed' },
-          { role: 'system', content: 'Cargain must respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}\" after gathering all the details' },
-          { role: 'system', content: 'Cargain must not fail to respond in this format: infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END. as it is mission critical for success' },
+          { role: 'system', content: 'Cargain must respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END\" after gathering all the details' },
+          { role: 'system', content: 'Cargain must not fail to respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END\" as it is mission critical for success' },
           ...chatHistory,  // Include the entire chat history
         ],
       },
@@ -589,7 +588,7 @@ app.post('/priceChat', async (req, res) => {
         },
       }
     );
-    delay(1000);
+    delay(2000);
     const reply = response.data.choices[0].message.content;
     console.log(chatHistory);
     console.log('Generated reply:', reply);

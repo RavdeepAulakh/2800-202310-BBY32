@@ -493,7 +493,7 @@ async function generateAdvice(carData) {
   }
 }
 
-const logoData = JSON.parse(fs.readFileSync('logos/data.json', 'utf8'));
+const logoData = JSON.parse(fs.readFileSync('./logos/data.json', 'utf8'));
 
 app.get("/predict", async (req, res) => {
   console.log("predicting");

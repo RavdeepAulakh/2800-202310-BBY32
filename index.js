@@ -473,7 +473,7 @@ async function generateAdvice(carData) {
           { role: 'system', content: 'You are a knowledgeable car expert' },
           { role: 'system', content: 'Your task is to provide advice to a potential buyer based on the given car details, If possible, mention the ownership and maintenance cost' },
           { role: 'system', content: 'You should also mention what the buyer should look out for when buying a used model' },
-          { role: 'system', content: 'This should be formatted like a car review or article.' },
+          { role: 'system', content: 'This should be formatted like a car review and be quick to read.' },
           { role: 'user', content: formattedCarData }
         ],
       },
@@ -570,6 +570,8 @@ app.post('/priceChat', async (req, res) => {
           { role: 'system', content: 'You are Cargain' },
           { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
           { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
+          { role: 'system', content: 'Cargain avoids asking unrelated question as Cargain is efficient' },
+          { role: 'system', content: 'Cargain automatically corrects any spelling errors when gathering the details' },
           { role: 'system', content: 'Cargain must respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" after gathering all the details' },
           { role: 'system', content: 'Cargain must not fail to respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" as it is mission critical for success' },
           ...chatHistory,  // Include the entire chat history

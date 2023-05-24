@@ -208,7 +208,7 @@ app.post('/chat', async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send('An error occurred.'); // Send error response if an error occurs
+    res.status(500).send('An error occurred please resend your messafe.'); // Send error response if an error occurs
   }
 });
 
@@ -456,6 +456,7 @@ async function generateAdvice(carData) {
   const formattedCarData = `Car details: year-${carData.year}, manufacturer-${carData.manufacturer}, model-${carData.model}`;
 
   try {
+    // Call OpenAI API to generate advice based on car details
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -490,9 +491,11 @@ app.get("/predict", async (req, res) => {
   const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
 
   try {
+    // Call external API to predict the car price
     const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
     console.log(priceResponse.data);
     delay(2000);
+    // Generate advice based on car details
     const advice = await generateAdvice(input);
     res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice });
   } catch (error) {
@@ -501,7 +504,7 @@ app.get("/predict", async (req, res) => {
   }
 });
 
-
+// Function to introduce a delay using a Promise
 function delay(time) {
   return new Promise(resolve => setTimeout(resolve, time));
 }
@@ -523,7 +526,7 @@ app.get('/priceChat', (req, res) => {
   res.render('pricechat', { initialMessage: "Tell me about the car to find the price." });
 });
 
-let chatHistory = [];  // Variable to store the chat history
+chatHistory = [];  // Variable to store the chat history
 
 app.post('/priceChat', async (req, res) => {
   const { message } = req.body;  // User's message
@@ -542,7 +545,7 @@ app.post('/priceChat', async (req, res) => {
     // Add the user's message to the chat history
     chatHistory.push({ role: 'user', content: message });
 
-    // Call to OpenAI API
+    // Call to OpenAI API to generate assistant's reply
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -551,8 +554,8 @@ app.post('/priceChat', async (req, res) => {
           { role: 'system', content: 'You are Cargain' },
           { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
           { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
-          { role: 'system', content: 'Cargain must respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END\" after gathering all the details' },
-          { role: 'system', content: 'Cargain must not fail to respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END\" as it is mission critical for success' },
+          { role: 'system', content: 'Cargain must respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" after gathering all the details' },
+          { role: 'system', content: 'Cargain must not fail to respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" as it is mission critical for success' },
           ...chatHistory,  // Include the entire chat history
         ],
       },
@@ -600,50 +603,10 @@ app.post('/priceChat', async (req, res) => {
     res.json({ reply });  // Send the assistant's reply back to the client
   } catch (error) {
     console.error(error);
-    res.status(500).send('An error occurred.');
+    res.status(500).send('An error occurred please resend your message.');
   }
 });
 
-app.get('/modelChat', (req, res) => {
-
-  res.render('modelchat', { initialMessage: "Tell me what you look for in a car." });
-});
-
-let modelChatHistory = [];  // Variable to store the chat history
-
-app.post('/modelChat', async (req, res) => {
-  const { message } = req.body;  // User's message
-
-  try {
-    // Add the user's message to the chat history
-    modelChatHistory.push({ role: 'user', content: message });
-
-    // Call to OpenAI API
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
-          ...modelChatHistory,  // Include the entire chat history
-        ],
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
-
-    const reply = response.data.choices[0].message.content;
-
-    res.json({ reply });  // Send the assistant's reply back to the client
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred.');
-  }
-});
 
 // Default route for handling unknown routes
 app.get("*", (req, res) => {

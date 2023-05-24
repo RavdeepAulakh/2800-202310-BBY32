@@ -1,13 +1,24 @@
+<!-- This code includes the header template, the footer template, and a Sign-up page for the user. -->
+
+<!-- Include the "header" template -->
 <%- include("templates/header") %>
 
 <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+
   <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+
+    <!-- Heading for the sign-up form -->
     <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 option">Sign up your account</h2>
+
   </div>
 
+  <!-- Form container -->
   <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+
+    <!-- Sign-up form with spacing and submit action -->
     <form class="space-y-6 w-full" action="/submitUser" method="POST">
 
+      <!-- Username input field -->
       <div>
         <label for="username" class="block text-sm font-medium leading-6 text-gray-900 option">Username</label>
         <div class="mt-2">
@@ -15,6 +26,7 @@
         </div>
       </div>
       
+      <!-- Email address input field -->
       <div>
         <label for="email" class="block text-sm font-medium leading-6 text-gray-900 option">Email address</label>
         <div class="mt-2">
@@ -22,6 +34,7 @@
         </div>
       </div>
 
+      <!-- Password input field -->
       <div>
         <div class="flex items-center justify-between">
           <label for="password" class="block text-sm font-medium leading-6 text-gray-900 option">Password</label>
@@ -39,4 +52,5 @@
   </div>
 </div>
 
+<!-- Include the "footer" template -->
 <%- include("templates/footer") %>

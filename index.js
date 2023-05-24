@@ -44,7 +44,7 @@ const database = require("./databaseConnection.js");
 
 const userCollection = database.db(MONGODB_DATABASE).collection("users");
 
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
@@ -144,95 +144,95 @@ app.post("/password-reset", async (req, res) => {
   });
 });
 
-  app.get('/chat', async (req, res) => {
+app.get('/chat', async (req, res) => {
 
-    if (!req.session.authenticated){
-        res.redirect('/login');
-        return;
-    }
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
 
-    res.render("chatbot");
-  });
+  res.render("chatbot");
+});
 
-  axiosRetry(axios, {
-    retries: 3,
-    retryDelay: axiosRetry.exponentialDelay,
-  });
-  
-  app.post('/chat', async (req, res) => {
-    try {
-      const { message } = req.body;
-      console.log('Received message:', message);
-  
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
-            { role: 'user', content: message },
-          ],
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+});
+
+app.post('/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    console.log('Received message:', message);
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
+          { role: 'user', content: message },
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          },
-        }
-      );
-  
-      console.log('OpenAI API response:', response.data);
-  
-      const { choices } = response.data;
-  
-      if (choices && choices.length > 0) {
-        const reply = response.data.choices[0].message.content;
-        if (reply) {
-          console.log('Generated reply:', reply);
-          res.json({ reply });
-        } else {
-          console.log('No reply generated.');
-          res.status(500).send('No reply generated.');
-        }
+      }
+    );
+
+    console.log('OpenAI API response:', response.data);
+
+    const { choices } = response.data;
+
+    if (choices && choices.length > 0) {
+      const reply = response.data.choices[0].message.content;
+      if (reply) {
+        console.log('Generated reply:', reply);
+        res.json({ reply });
       } else {
         console.log('No reply generated.');
         res.status(500).send('No reply generated.');
-      }                
-    } catch (error) {
-      console.error(error);
-      res.status(500).send('An error occurred.');
+      }
+    } else {
+      console.log('No reply generated.');
+      res.status(500).send('No reply generated.');
     }
-  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred.');
+  }
+});
 
-  app.get('/protected-reset', async (req, res) => {
-    const token = req.query.token;
-    const user = await userCollection.findOne({ passwordResetToken: token });
-  
-    if (!user) {
-      return res.render("tokenExpired");
-    }
-  
-    res.render('ActualResetPage', { token: token });
-  });
-  
-  app.post('/protected-reset', async (req, res) => {
-    const token = req.body.token;
-    const user = await userCollection.findOne({ passwordResetToken: token });
-  
-    if (!user) {
-      return res.send('Error: Invalid or expired token.');
-    }
-  
-    const password = req.body.password;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-    await userCollection.updateOne(
-      { _id: user._id },
-      { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
-    );
-  
-    res.render("passwordResetSuccess");
-  });
+app.get('/protected-reset', async (req, res) => {
+  const token = req.query.token;
+  const user = await userCollection.findOne({ passwordResetToken: token });
+
+  if (!user) {
+    return res.render("tokenExpired");
+  }
+
+  res.render('ActualResetPage', { token: token });
+});
+
+app.post('/protected-reset', async (req, res) => {
+  const token = req.body.token;
+  const user = await userCollection.findOne({ passwordResetToken: token });
+
+  if (!user) {
+    return res.send('Error: Invalid or expired token.');
+  }
+
+  const password = req.body.password;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+  await userCollection.updateOne(
+    { _id: user._id },
+    { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
+  );
+
+  res.render("passwordResetSuccess");
+});
 
 app.get("/nosql-injection", async (req, res) => {
   var username = req.query.user;
@@ -508,24 +508,28 @@ app.post("/updateInfo", async (req, res) => {
 });
 
 app.get("/predict", (req, res) => {
-    const input = req.body.input;
-    // const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
-    test = "2015,honda,civi si coupe 2d,excellent,70000,clean,red,2021,1";
-    console.log(input);
-    formatted = test;
-    
-    axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
-        input: formatted
-    })
+  const input = req.body.input;
+  // const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,1`;
+  test = "2015,honda,civi si coupe 2d,excellent,70000,clean,red,2021,1";
+  console.log(input);
+  formatted = test;
+
+  axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
+    input: formatted
+  })
     .then(function (response) {
-        console.log(response.data);
-        res.render("predict", {price: response.data.prediction});
+      console.log(response.data);
+      res.render("predict", { price: response.data.prediction });
     })
     .catch(function (error) {
-        console.log(error);
-        res.render("errorMessage", {message: "Error predicting price"});
+      console.log(error);
+      res.render("errorMessage", { message: "Error predicting price" });
     })
 });
+
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
 
 app.get('/priceChat', (req, res) => {
   // Initialize carData in session
@@ -537,6 +541,9 @@ app.get('/priceChat', (req, res) => {
     'title_status': null,
     'paint_color': null
   };
+  chatHistory = [];
+
+  console.log(chatHistory);
   console.log(req.session.carData);
   res.render('pricechat', { initialMessage: "Tell me about the car to find the price." });
 });
@@ -545,7 +552,7 @@ let chatHistory = [];  // Variable to store the chat history
 
 app.post('/priceChat', async (req, res) => {
   const { message } = req.body;  // User's message
-  
+
   // If carData is not initialized, initialize it
   if (!req.session.carData) {
     return res.redirect('/priceChat');
@@ -555,7 +562,7 @@ app.post('/priceChat', async (req, res) => {
   if (Object.values(req.session.carData).every(val => val !== null)) {
     return res.redirect('/predict');
   }
-  
+
   try {
     // Add the user's message to the chat history
     chatHistory.push({ role: 'user', content: message });
@@ -566,9 +573,12 @@ app.post('/priceChat', async (req, res) => {
       {
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: 'You are a helpful assistant gathering the following detail of a car to redirect the user. year, manufacturer, model, condition, odometer, title_status, paint_color' },
-          { role: 'system', content: 'If the user dosen`t know a detail of the car, give the user some help on how to find out' },
-          { role: 'system', content: 'Once you have all the details, redirect the user to /predict' },
+          { role: 'system', content: 'You are Cargain' },
+          { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
+          { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
+          { role: 'system', content: 'Cargain repeats the collected info to the user to keep them informed' },
+          { role: 'system', content: 'Cargain must respond in this format: \"infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}\" after gathering all the details' },
+          { role: 'system', content: 'Cargain must not fail to respond in this format: infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END. as it is mission critical for success' },
           ...chatHistory,  // Include the entire chat history
         ],
       },
@@ -579,8 +589,38 @@ app.post('/priceChat', async (req, res) => {
         },
       }
     );
-
+    delay(1000);
     const reply = response.data.choices[0].message.content;
+    console.log(chatHistory);
+    console.log('Generated reply:', reply);
+
+    // Search for 'infoCollected-' keyword in the reply
+    const infoIndex = reply.indexOf('infoCollected-');
+
+    // Check if the information is collected
+    if (infoIndex !== -1) {
+      // Extract the data from the reply
+      const dataString = reply.slice(infoIndex + 'infoCollected-'.length);
+      const dataEndIndex = dataString.indexOf('-END');
+      const data = dataString.slice(0, dataEndIndex === -1 ? undefined : dataEndIndex).split(",");
+
+      // Assign the data to the session variable
+      req.session.carData = {
+        'year': data[0],
+        'manufacturer': data[1],
+        'model': data[2],
+        'condition': data[3],
+        'odometer': data[4],
+        'title_status': data[5],
+        'paint_color': data[6]
+      };
+      console.log(req.session.carData);
+      // Check if all car details are collected, redirect to /predict
+      if (Object.values(req.session.carData).every(val => val !== null)) {
+        req.body.input = req.session.carData;  // update input with collected carData
+        return res.redirect('/predict');
+      }
+    }
 
     res.json({ reply });  // Send the assistant's reply back to the client
   } catch (error) {
@@ -590,7 +630,7 @@ app.post('/priceChat', async (req, res) => {
 });
 
 app.get('/modelChat', (req, res) => {
-  
+
   res.render('modelchat', { initialMessage: "Tell me what you look for in a car." });
 });
 
@@ -598,7 +638,7 @@ let modelChatHistory = [];  // Variable to store the chat history
 
 app.post('/modelChat', async (req, res) => {
   const { message } = req.body;  // User's message
-  
+
   try {
     // Add the user's message to the chat history
     modelChatHistory.push({ role: 'user', content: message });

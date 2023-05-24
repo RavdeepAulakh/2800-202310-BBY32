@@ -1,7 +1,12 @@
-<%- include("templates/header") %> 
-<h2><%=price %></h2>
-<br>
-<p><%=carData %></p>
-<br>
+<%- include("templates/header") %>
+<h2>Estimated Market Value: $<%=price %></h2>
+<br/>
+<img src="<%=logoUrl %>" alt="<%=carData.manufacturer %> Logo">
+<p><%=carData.year %> <%=carData.manufacture %> <%=carData.model %></p>
+<p>
+  <%=carData.odometer %> Condition: <%=carData.condition %> Title
+  Status:<%=carData.title_status %>
+</p>
+<br />
 <p><%=advice %></p>
-<%- include("templates/footer") %> 
+<%- include("templates/footer") %>

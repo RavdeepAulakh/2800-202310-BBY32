@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const fs = require('fs');
 const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
@@ -46,7 +47,7 @@ const userCollection = database.db(MONGODB_DATABASE).collection("users");
 
 const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars');
 
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
@@ -54,10 +55,10 @@ app.use(express.static(__dirname + '/js'));
 app.use(express.static(__dirname + '/style'));
 
 var mongoStore = MongoStore.create({
-	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`,
-	crypto: {
-		secret: MONGODB_SESSION_SECRET
-	}
+  mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`,
+  crypto: {
+    secret: MONGODB_SESSION_SECRET
+  }
 })
 
 app.use(
@@ -156,63 +157,63 @@ app.get('/chat', async (req, res) => {
 
   res.render("chatbot");
 });
-  axiosRetry(axios, {
-    retries: 3,
-    retryDelay: axiosRetry.exponentialDelay,
-  });
-  
-  let chatHistory = [];  // Variable to store the chat history
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+});
 
-  app.post('/chat', async (req, res) => {
-    try {
-      const { message } = req.body;
-      console.log('Received message:', message);
-  
-      // Add the user's message to the chat history
-      chatHistory.push({ role: 'user', content: message });
-  
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
-            ...chatHistory,  // Include the entire chat history
-          ],
+let chatHistory = [];  // Variable to store the chat history
+
+app.post('/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    console.log('Received message:', message);
+
+    // Add the user's message to the chat history
+    chatHistory.push({ role: 'user', content: message });
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
+          ...chatHistory,  // Include the entire chat history
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          },
-        }
-      );
-  
-      console.log('OpenAI API response:', response.data);
-  
-      const { choices } = response.data;
-  
-      if (choices && choices.length > 0) {
-        const reply = response.data.choices[0].message.content;
-        if (reply) {
-          // Add the assistant's reply to the chat history
-          chatHistory.push({ role: 'assistant', content: reply });
-  
-          console.log('Generated reply:', reply);
-          res.json({ reply });
-        } else {
-          console.log('No reply generated.');
-          res.status(500).send('No reply generated.');
-        }
+      }
+    );
+
+    console.log('OpenAI API response:', response.data);
+
+    const { choices } = response.data;
+
+    if (choices && choices.length > 0) {
+      const reply = response.data.choices[0].message.content;
+      if (reply) {
+        // Add the assistant's reply to the chat history
+        chatHistory.push({ role: 'assistant', content: reply });
+
+        console.log('Generated reply:', reply);
+        res.json({ reply });
       } else {
         console.log('No reply generated.');
         res.status(500).send('No reply generated.');
       }
-    } catch (error) {
-      console.error(error);
-      res.status(500).send('An error occurred.');
+    } else {
+      console.log('No reply generated.');
+      res.status(500).send('No reply generated.');
     }
-  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred.');
+  }
+});
 
 app.get('/protected-reset', async (req, res) => {
   const token = req.query.token;
@@ -422,12 +423,12 @@ app.post("/loggingin", async (req, res) => {
     return;
   }
 
-	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1}).toArray();
+  const result = await userCollection.find({ email: email }).project({ username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1 }).toArray();
 
-	console.log(result);
-	if (result.length != 1) {
-		console.log("user not found");
-		res.render("loginfail");
+  console.log(result);
+  if (result.length != 1) {
+    console.log("user not found");
+    res.render("loginfail");
     return;
   }
 
@@ -438,7 +439,7 @@ app.post("/loggingin", async (req, res) => {
     req.session.user_type = result[0].user_type;
     req.session.bio = result[0].bio;
     req.session.avatar = result[0].avatar;
-	  req.session.cookie.maxAge = expireTime;
+    req.session.cookie.maxAge = expireTime;
 
     res.redirect("/loggedin");
     return;
@@ -458,25 +459,25 @@ app.get("/logout", (req, res) => {
 
 app.get('/userProfile', sessionValidation, async (req, res) => {
   const avatars = await avatarCollection.find().toArray();
-  res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars})
+  res.render("userProfile", { user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars })
 });
 
-app.post('/updateInfo', async (req,res) => {
+app.post('/updateInfo', async (req, res) => {
   const newUserName = req.body.username;
   const newBio = req.body.bio;
   const newEmail = req.body.email;
   let updateSchema;
-  let validationResult = {error: null};
+  let validationResult = { error: null };
 
   if (newUserName) {
     updateSchema = Joi.string().alphanum().max(20);
     validationResult = updateSchema.validate(newUserName);
-  } 
+  }
   if (newBio) {
     updateSchema = Joi.string().max(250);
     validationResult = updateSchema.validate(newBio);
-  } 
-    
+  }
+
   if (newEmail) {
     updateSchema = Joi.string().email();
     validationResult = updateSchema.validate(newEmail);
@@ -505,30 +506,30 @@ app.post('/updateInfo', async (req,res) => {
 
   await userCollection.updateMany(filter, { $set: update });
 
-    // Handle session and redirect as needed
-    req.session.username = newUserName || req.session.username;
-    req.session.bio = newBio || req.session.bio;
-    req.session.email = newEmail || req.session.email;
-    res.redirect('userProfile');
+  // Handle session and redirect as needed
+  req.session.username = newUserName || req.session.username;
+  req.session.bio = newBio || req.session.bio;
+  req.session.email = newEmail || req.session.email;
+  res.redirect('userProfile');
 });
 
 app.post('/changeAvatar', async (req, res) => {
   const newAvatarUrl = req.body.url;
   let newURLschema = Joi.string();
-  let URLvalidation  = newURLschema.validate(newAvatarUrl);
-  
+  let URLvalidation = newURLschema.validate(newAvatarUrl);
+
   if (URLvalidation.error) {
     console.log(URLvalidation.error);
-    res.render("errorMessage", {message: "Update failed, try again"});
+    res.render("errorMessage", { message: "Update failed, try again" });
     return;
   } else {
-    const avatarFilter = {username: req.session.username, email: req.session.email};
-    
+    const avatarFilter = { username: req.session.username, email: req.session.email };
+
     try {
-      await userCollection.updateMany(avatarFilter, { $set: {avatar: newAvatarUrl} });
+      await userCollection.updateMany(avatarFilter, { $set: { avatar: newAvatarUrl } });
       req.session.avatar = newAvatarUrl;
       res.json({ success: true });
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       res.json({ success: false, error: err.message });
     }
@@ -567,6 +568,8 @@ async function generateAdvice(carData) {
   }
 }
 
+const logoData = JSON.parse(fs.readFileSync('logos/data.json', 'utf8'));
+
 app.get("/predict", async (req, res) => {
   console.log("predicting");
   const input = req.session.carData;
@@ -575,9 +578,12 @@ app.get("/predict", async (req, res) => {
   try {
     const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
     console.log(priceResponse.data);
+    const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
+    const logoUrl = carLogo ? carLogo.image.optimized : 'default-logo-url';
+
     delay(3000);
     const advice = await generateAdvice(input);
-    res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice });
+    res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
   } catch (error) {
     console.log(error);
     res.render("errorMessage", { message: "Error predicting price or generating advice" });

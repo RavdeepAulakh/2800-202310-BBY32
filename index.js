@@ -617,7 +617,10 @@ app.post('/priceChat', async (req, res) => {
       // Check if all car details are collected, redirect to /predict
       if (Object.values(req.session.carData).every(val => val !== null)) {
         req.body.input = req.session.carData;  // update input with collected carData
-        return res.redirect('/predict');
+        res.redirect('/predict');
+        return;
+      } else {
+        res.render("errorMessage", { message: "Error redirecting" });
       }
     }
 

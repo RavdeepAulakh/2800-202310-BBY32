@@ -493,7 +493,9 @@ async function generateAdvice(carData) {
   }
 }
 
-const logoData = JSON.parse(fs.readFileSync('./logos/data.json', 'utf8'));
+const path = require('path');
+const logoDataPath = path.join(__dirname, 'logos', 'data.json');
+const logoData = JSON.parse(fs.readFileSync(logoDataPath, 'utf8'));
 
 app.get("/predict", async (req, res) => {
   console.log("predicting");

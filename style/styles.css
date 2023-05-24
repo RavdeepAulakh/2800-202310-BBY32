@@ -75,3 +75,8 @@
   .feedback {
     margin-top: 20px;
   }
+
+  #navAvatar {
+    border-radius: 50%;
+  }
+  

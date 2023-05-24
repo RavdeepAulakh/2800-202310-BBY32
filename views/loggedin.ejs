@@ -1,22 +1,37 @@
+<!-- This code includes the header template, applies a custom CSS file, displays a logged-in message with the username, and provides options for different features. Finally, it includes the footer template. -->
+
+<!-- Include the "header" template -->
 <%- include("templates/header") %>
+
+<!-- Link to a custom CSS file -->
 <link rel="stylesheet" href="/loggedin.css">
+
 <div class="flex flex-col items-center justify-center h-screen">
+
+  <!-- Container for the message -->
   <div class="message-container">
-  <h1 class="text-4xl font-bold mb-8 text-center hello-message">Hello <%= username %>, Welcome to Cargain!</h1>
+    <!-- Heading with a customized greeting message that includes the username -->
+    <h1 class="text-4xl font-bold mb-8 text-center hello-message">Hello <%= username %>, Welcome to Cargain!</h1>
   </div>
+
+  <!-- Grid container with 2 columns and a gap between items -->
   <div class="grid grid-cols-2 gap-4 option">
+    <!-- Link to the "chat" page, representing the option to find a car -->
     <a href="/chat" class="bg-white rounded-lg shadow-md p-8 hov">
       <img src="/search.svg" alt="Icon 1" class="w-16 h-16 mx-auto mb-4">
       <h2 class="text-2xl font-bold text-center">Find a Car</h2>
     </a>
-    <a href="/priceChat" class="bg-white rounded-lg shadow-md p-8">
+    <!-- Placeholder link representing the option to buy or sell -->
+    <a href="/priceChat" class="bg-white rounded-lg shadow-md p-8 hov">
       <img src="/car-crash.svg" alt="Icon 2" class="w-16 h-16 mx-auto mb-4">
       <h2 class="text-2xl font-bold mt-4">Buy or Sell</h2>
     </a>
+    <!-- Link to the user profile page -->
     <a href="/userProfile" class="bg-white rounded-lg shadow-md p-8 text-center hov">
       <img src="/person.svg" alt="Icon 3" class="w-16 h-16 mx-auto mb-4">
       <h2 class="text-2xl font-bold mt-4">Profile</h2>
     </a>
+    <!-- Placeholder link representing the option for managing the user's garage -->
     <a href="#" class="bg-white rounded-lg shadow-md p-8 text-center hov" id="lastcard">
       <img src="/garage-home.svg" alt="Icon 4" class="w-16 h-16 mx-auto mb-4">
       <h2 class="text-2xl font-bold mt-4">My Garage</h2>
@@ -24,4 +39,5 @@
   </div>
 </div>
 
+<!-- Include the "footer" template -->
 <%- include("templates/footer") %>

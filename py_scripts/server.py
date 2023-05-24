@@ -52,6 +52,10 @@ def preprocess_input(data):
             close_match = difflib.get_close_matches(data[column][0], valid_inputs[column], n=1)
             data[column][0] = close_match[0] if close_match else float('NaN')
 
+    # Convert year and odometer to numeric values
+    data['year'] = pd.to_numeric(data['year'], errors='coerce')
+    data['odometer'] = data['odometer'].str.replace('[^0-9]', '', regex=True).astype(float)
+
     print(data)
     data['manufacturer'] = manufacturer_encoder.transform(data['manufacturer'].astype(str))
     data['model'] = model_encoder.transform(data['model'].astype(str))

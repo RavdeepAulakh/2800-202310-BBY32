@@ -155,8 +155,15 @@ app.get('/chat', async (req, res) => {
 
 // Retry configuration for axios requests
 axiosRetry(axios, {
-  retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
+  retries: 5,
+  retryDelay: (retryCount) => {
+    console.log(`retry attempt: ${retryCount}`);
+    return retryCount * 5000;
+  },
+  retryCondition: (error) => {
+    // Check if it is a 429 error (Too Many Requests)
+    return error.response.status === 429;
+  },
 });
 
 let chatHistory = [];  // Variable to store the chat history

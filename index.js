@@ -84,6 +84,19 @@ function sessionValidation(req, res, next) {
   }
 }
 
+function authenticateUser(req, res, next) {
+  if (isValidSession(req)) {
+    res.locals.isUserAuthenticated = true;
+    res.locals.userName = req.session.username;
+  } else {
+    res.locals.isUserAuthenticated = false;
+  }
+
+  next();
+}
+
+app.use(authenticateUser);
+
 function isAdmin(req) {
   if (req.session.user_type == "admin") {
     return true;

@@ -87,7 +87,37 @@ function sessionValidation(req, res, next) {
   if (isValidSession(req)) {
     next(); // Proceed to the next middleware if session is valid
   } else {
-    res.redirect("/login"); // Redirect to the login page if session is not valid
+    res.redirect("/login");
+  }
+}
+
+function authenticateUser(req, res, next) {
+  if (isValidSession(req)) {
+    res.locals.isUserAuthenticated = true;
+    res.locals.userName = req.session.username;
+  } else {
+    res.locals.isUserAuthenticated = false;
+  }
+
+  next();
+}
+
+app.use(authenticateUser);
+
+function isAdmin(req) {
+  if (req.session.user_type == "admin") {
+    return true;
+  }
+  return false;
+}
+
+function adminAuthorization(req, res, next) {
+  if (!isAdmin(req)) {
+    res.status(403);
+    res.render("errorMessage", { message: "Not Authorized" });
+    return;
+  } else {
+    next();
   }
 }
 

@@ -590,6 +590,12 @@ function delay(time) {
 }
 
 app.get('/priceChat', (req, res) => {
+
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
+
   // Initialize carData in session
   req.session.carData = {
     'year': null,

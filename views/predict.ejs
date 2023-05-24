@@ -1,12 +1,35 @@
 <%- include("templates/header") %>
-<h2>Estimated Market Value: $<%=price %></h2>
-<br/>
-<img src="<%=logoUrl %>" alt="<%=carData.manufacturer %> Logo">
-<p><%=carData.year %> <%=carData.manufacture %> <%=carData.model %></p>
-<p>
-  <%=carData.odometer %> Condition: <%=carData.condition %> Title
-  Status:<%=carData.title_status %>
-</p>
-<br />
-<p><%=advice %></p>
+
+<section>
+  <div class="row">
+    <div class="col-12 option">
+      <div class="card mb-4">
+        <div class="card-body text-center">
+          <img
+            src="<%=logoUrl %>"
+            alt="<%=carData.manufacturer %> Logo"
+            class="mx-auto"
+            style="width: 250px"
+          />
+          <div class="mt-3">
+            <h1>Estimated Market Value: $<%=price %></h1>
+            <br />
+            <p>
+              <%=carData.year %> <%=carData.manufacturer %> <%=carData.model %>
+            </p>
+            <p>
+              Mileage: <%=carData.odometer %> Condition: <%=carData.condition %>
+              Title Status: <%=carData.title_status %>
+            </p>
+          </div>
+          <br />
+          <div class="mt-3">
+            <p><%=advice %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <%- include("templates/footer") %>

@@ -1,3 +1,6 @@
+<!-- This code includes the header template and displays a sign-in form. It also includes a token expired alert. It then includes the footer template. -->
+
+<!-- Include the "header" template -->
 <%- include("templates/header") %>
 
 <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
@@ -7,6 +10,7 @@
 
   <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
     <form class="space-y-6" action='/loggingin' method="POST">
+      <!-- Email field -->
       <div>
         <label for="email" class="block text-sm font-medium leading-6 text-gray-900 option">Email address</label>
         <div class="mt-2">
@@ -14,6 +18,7 @@
         </div>
       </div>
 
+      <!-- Password field -->
       <div>
         <div class="flex items-center justify-between">
           <label for="password" class="block text-sm font-medium leading-6 text-gray-900 option">Password</label>
@@ -26,19 +31,23 @@
         </div>
       </div>
 
+      <!-- Sign in button -->
       <div class ="option">
         <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 hov">Sign in</button>
       </div>
     </form>
+
+    <!-- Token expired alert -->
     <div class="bg-red-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md option" role="alert">
-        <div class="flex">
-          <div class="py-1"><svg class="fill-current h-6 w-6 text-teal-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
-          <div>
-            <p class="font-bold">Token expired</p>
-          </div>
+      <div class="flex">
+        <div class="py-1"><svg class="fill-current h-6 w-6 text-teal-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg></div>
+        <div>
+          <p class="font-bold">Token expired</p>
         </div>
       </div>
+    </div>
   </div>
 </div>
 
+<!-- Include the "footer" template -->
 <%- include("templates/footer") %>

@@ -24,8 +24,14 @@
 
         try {
           const response = await axios.post('/priceChat', { message });
-          const reply = response.data.reply;
-          appendMessage('assistant', reply);
+          // If the server sends a redirect signal, manually redirect the page
+          if (response.data.redirect) {
+            window.location = response.data.redirect;
+          } else {
+            // Otherwise, display the assistant's reply
+            const reply = response.data.reply;
+            appendMessage('assistant', reply);
+          }
         } catch (error) {
           console.error(error);
           appendMessage('assistant', 'An error occurred.');

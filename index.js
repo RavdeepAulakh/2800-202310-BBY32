@@ -614,14 +614,12 @@ app.post('/priceChat', async (req, res) => {
         'paint_color': data[6]
       };
       console.log(req.session.carData);
-      // Check if all car details are collected, redirect to /predict
+      // If all car details are collected, send a signal to redirect to /predict
       if (Object.values(req.session.carData).every(val => val !== null)) {
-        req.body.input = req.session.carData;  // update input with collected carData
-        res.redirect('/predict');
-        return;
-      } else {
-        res.render("errorMessage", { message: "Error redirecting" });
+        return res.json({ redirect: '/predict' });
       }
+      // If information is collected, send the assistant's reply back to the client
+      res.json({ reply });
     }
 
     res.json({ reply });  // Send the assistant's reply back to the client

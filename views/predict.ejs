@@ -13,15 +13,20 @@
 </section>
 
 <script>
-  fetch('/predict')
-    .then(response => response.json())
-    .then(data => {
+  fetch("/predictData")
+    .then((response) => response.json())
+    .then((data) => {
       if (data.error) {
         // Handle error
-        document.getElementById('content').innerHTML = `<h1>Error: ${data.error}</h1>`;
+        document.getElementById(
+          "content"
+        ).innerHTML = `<h1>Error: ${data.error}</h1>`;
       } else {
+        // Round the price value
+        data.price = Math.round(data.price);
+
         // Update the page with the fetched data
-        document.getElementById('content').innerHTML = `
+        document.getElementById("content").innerHTML = `
           <div class="mb-4">
             <div class="text-center">
               <img src="${data.logoUrl}" alt="${data.carData.manufacturer} Logo" class="mx-auto" style="width: 250px" />

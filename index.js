@@ -527,7 +527,7 @@ const path = require('path');
 const logoDataPath = path.join(__dirname, 'logos', 'data.json');
 const logoData = JSON.parse(fs.readFileSync(logoDataPath, 'utf8'));
 
-app.get("/predict", sessionValidation, async (req, res) => {
+app.get("/predictData", sessionValidation, async (req, res) => {
   console.log("predicting");
   const input = req.session.carData;
   const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,5`;
@@ -670,7 +670,7 @@ app.post('/priceChat', sessionValidation, async (req, res) => {
       console.log(req.session.carData);
       // If all car details are collected, send a signal to redirect to /predict
       if (Object.values(req.session.carData).every(val => val !== null)) {
-        return res.json({ redirect: '/predictl' });
+        return res.json({ redirect: '/predict' });
       }
       // If information is collected, send the assistant's reply back to the client
       res.json({ reply });
@@ -683,7 +683,7 @@ app.post('/priceChat', sessionValidation, async (req, res) => {
   }
 });
 
-app.get("/predictl", sessionValidation, (req, res) => {
+app.get("/predict", sessionValidation, (req, res) => {
   res.render("predict"); // Render the passwordReset view
 });
 

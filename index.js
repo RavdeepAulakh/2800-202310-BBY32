@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "vravdeep@gmail.com", // Gmail account username
+    user: process.env.EMAIL_USER, // Gmail account username
     pass: process.env.EMAIL_PASSWORD, // Gmail account password stored in environment variable
   },
 });
@@ -543,7 +543,7 @@ app.get("/predictData", sessionValidation, async (req, res) => {
 
   try {
     // Call external API to predict the car price
-    const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
+    const priceResponse = await axios.post(`${process.env.PREDICT}`, { input: formatted });
     console.log(priceResponse.data);
     const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
     const logoUrl = carLogo ? carLogo.image.optimized : 'default-logo-url';
@@ -579,28 +579,6 @@ app.get("/predictData", sessionValidation, async (req, res) => {
     res.json({ error: "Error predicting price or generating advice" });
   }
 });
-
-// app.get("/predict", async (req, res) => {
-//   console.log("predicting");
-//   const input = req.session.carData;
-//   const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
-
-//   try {
-//     // Call external API to predict the car price
-//     const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
-//     console.log(priceResponse.data);
-//     const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
-//     const logoUrl = carLogo ? carLogo.image.optimized : 'default-logo-url';
-
-//     delay(3000);
-
-//     const advice = await generateAdvice(input);
-//     res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
-//   } catch (error) {
-//     console.log(error);
-//     res.render("errorMessage", { message: "Error predicting price or generating advice" });
-//   }
-// });
 
 // Function to introduce a delay using a Promise
 function delay(time) {

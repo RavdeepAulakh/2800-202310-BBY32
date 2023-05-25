@@ -1,6 +1,6 @@
 <%- include("templates/header") %>
 
-<section class="flex justify-center items-center min-h-screen">
+<section class="flex justify-center items-center min-h-screen option">
   <div id="content" class="text-center">
     <div class="mb-4">
       <svg class="animate-spin h-12 w-12 mx-auto text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -27,7 +27,7 @@
 
         // Update the page with the fetched data
         document.getElementById("content").innerHTML = `
-          <div class="mb-4">
+          <div class="mb-4 option">
             <div class="text-center">
               <img src="${data.logoUrl}" alt="${data.carData.manufacturer} Logo" class="mx-auto" style="width: 250px" />
               <div class="mt-3">

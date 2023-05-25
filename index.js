@@ -705,7 +705,7 @@ app.get('/garage',sessionValidation, async (req, res) => {
   } catch (err) {
     console.log('User ID:', req.session._id);
     console.log('Error:', err);
-    res.render("errorMessage", { message: "You don't have any cars saved yet" });
+    res.render("errorMessage", { message: "You haven't viewed any cars recently!" });
   }
 });
 

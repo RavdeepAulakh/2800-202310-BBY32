@@ -11,5 +11,10 @@
             "src": "/(.*)",
             "dest": "/"
         }
-    ]
+    ],
+    "functions": {
+        "/views/predict.ejs": {
+            "maxDuration": 60
+        }
+    }
   }

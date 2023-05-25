@@ -3,10 +3,10 @@
 <p align="center"><img src="./public/home-logo.png"></p>
 
 ## Project Pitch
-Our project, Cargain, is developing AI powered used car price estimator to help people who are new to the used car market find reliable and affordable vehicles with Linear regressions and generative AI
+Our project, Cargain, is developing AI powered used car price estimator to help people who are new to the used car market find reliable and affordable vehicles with machine learning and generative AI
 
 ## Technologies 
-EJS, Python, CSS, Javascript, MongoDB, OpenAI API, Node, Tailwind, Bootstrap, Vercel
+EJS, Python, CSS, Javascript, MongoDB, OpenAI API, Node, Tailwind, Bootstrap, Vercel, Scikit-learn, Flask
 
 ## Directory Structure
 ```bash
@@ -345,24 +345,28 @@ EJS, Python, CSS, Javascript, MongoDB, OpenAI API, Node, Tailwind, Bootstrap, Ve
 \
 <b>Enviroment Variables</b>: The enviroment variables you need are: 
 ```
-MONGODB_HOST
-MONGODB_USER
-MONGODB_PASSWORD
-MONGODB_DATABASE
-MONGODB_SESSION_SECRET
-NODE_SESSION_SECRET
-EMAIL_PASSWORD
-OPENAI_API_KEY
+MONGODB_HOST=
+MONGODB_USER=
+MONGODB_PASSWORD=
+MONGODB_DATABASE=
+MONGODB_SESSION_SECRET=
+NODE_SESSION_SECRET=
+EMAIL_USER=
+EMAIL_PASSWORD=
+OPENAI_API_KEY=
+UNSPLASH_ACCESS_KEY=
+PREDICT=
 ``` 
 \
 <b>Third Party API's</b>: Will need a API key for ChatGPT to use any of the chat bots on the site \
 \
 <b>Instructions to run</b>: After installing everything needed here are the steps to run the code: 
-1. Open a terminal window
-2. CD to the location of the project repo
-3. Type the command ```node index.js``` into the terminal
-4. Go to web browser and type in ```localhost:3000```
-5. Your Done! The webpage should be up and running on this host
+1. Host the flask server located in 'py_scripts/Predict api'
+2. Open a terminal window
+3. CD to the location of the project repo
+4. Type the command ```node index.js``` into the terminal
+5. Go to web browser and type in ```localhost:3000```
+6. Your Done! The webpage should be up and running on this host
 
 <b>Testing Sheet</b>: https://docs.google.com/spreadsheets/d/1Bi82VyTT5YOWnhw9vpYHLW4Sh8o6rsQfeRThbktHTJ0/edit?usp=sharing
 
@@ -392,7 +396,8 @@ These steps will help you get started using the web app:
 
 ## Credits and References
 
-This needs to be filled out still
+Dataset: https://www.kaggle.com/datasets/austinreese/craigslist-carstrucks-data
+Logos: https://github.com/filippofilip95/car-logos-dataset
 
 ## How we used AI
 
@@ -400,11 +405,11 @@ We used AI for a multitude of things in our application:
 
 1. We used the AI ChatGPT to help us troubleshoot issues mainly and occasionally to help with styling elements of pages
 
-2. We use a dataset we got from Kaggle to train a linear regression model to predict prices of cars using python
+2. We use a dataset we got from Kaggle to train a model with scikit learn to predict prices of cars using python
 
 3. The web app also uses AI in the recommendation chat bot in order to recommend the user a car and in the price prediction chat bot in order to get the information needed from the user to predict the price of their car
 
-The biggest limitation we encountered was with the ChatGPT AI rate limiting us a lot when we made requests to in order to get around this we implemented a wait time of 3 seconds before we make the request so we don't send to many requests to quickly and get errors. In case we still do we also have a error message prompting the user to just type their message again as the API will still work normally if you just re send your message.
+The biggest limitation we encountered was with the ChatGPT AI rate limiting us a lot when we made requests to in order to get around this we adjusted the axios retry delay before we make the request so we don't send to many requests to quickly and get errors. In case we still do we also have a error message prompting the user to just type their message again as the API will still work normally if you just resend your message.
 
 ## Contact Information
 

@@ -4,12 +4,14 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const MongoStore = require('connect-mongo');
+const mongodb = require('mongodb');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
+const { ObjectId } = require('mongodb');
 
 // Create nodemailer transporter for email communication
 const transporter = nodemailer.createTransport({
@@ -48,6 +50,8 @@ const database = require("./js/databaseConnection.js"); // Require the database 
 const userCollection = database.db(MONGODB_DATABASE).collection("users"); // Get the collection of users from the database
 
 const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars'); // Get the collection of avatars from the database
+
+const garageCollection = database.db(MONGODB_DATABASE).collection('garage'); // Get the collection of cars specfic to the user
 
 // Configure app to use necessary middleware
 app.use(express.urlencoded({extended: true})); // Parse URL-encoded bodies
@@ -96,6 +100,7 @@ function authenticateUser(req, res, next) {
   if (isValidSession(req)) {
     res.locals.isUserAuthenticated = true;
     res.locals.userName = req.session.username;
+    res.locals.avatar = req.session.avatar;
   } else {
     res.locals.isUserAuthenticated = false;
   }
@@ -356,6 +361,7 @@ app.post("/submitUser", async (req, res) => {
   req.session.bio = bioStart;
   req.session.cookie.maxAge = expireTime;
   req.session.avatar = avatarURL;
+  req.session._id = insertResult.insertedId.toString();
   res.redirect('/loggedin'); // Redirect to the loggedin page
 });
 
@@ -388,6 +394,7 @@ app.post("/loggingin", async (req, res) => {
     req.session.bio = result[0].bio;
     req.session.avatar = result[0].avatar;
     req.session.cookie.maxAge = expireTime;
+    req.session._id = result[0]._id.toString();
 
     res.redirect("/loggedin"); // Redirect to the loggedin page
     return;
@@ -442,7 +449,8 @@ app.post('/updateInfo', async (req,res) => {
     return;
   }
 
-  const filter = { username: req.session.username, email: req.session.email };
+  const _id = new ObjectId(req.session._id);
+  const filter = { _id: _id };
   const update = {};
 
   if (newUserName) {
@@ -477,7 +485,8 @@ app.post('/changeAvatar', async (req, res) => {
     res.render("errorMessage", {message: "Update failed, try again"}); // Render an error message if validation fails
     return;
   } else {
-    const avatarFilter = { username: req.session.username, email: req.session.email };
+    const _id = new ObjectId(req.session._id);
+    const avatarFilter = { _id: _id };
 
     try {
       await userCollection.updateMany(avatarFilter, { $set: {avatar: newAvatarUrl} }); // Update avatar URL in the userCollection
@@ -542,7 +551,29 @@ app.get("/predict", async (req, res) => {
     delay(3000);
 
     const advice = await generateAdvice(input);
+
+    // Define the new document to be inserted or replace the existing one
+    const newGarageDocument = {
+      userID: req.session._id,
+      price: priceResponse.data.prediction,
+      carData: input,
+      advice: advice,
+      logoUrl: logoUrl
+    };
+    
+    // Find a document in garageCollection that matches the user's id
+    const userId = req.session._id;
+    const existingGarageDocument = await garageCollection.findOne({ userID: userId });
+    
+    // If the document exists, replace it. Otherwise, insert a new document.
+    if (existingGarageDocument) {
+      await garageCollection.replaceOne({ userID: userId }, newGarageDocument);
+    } else {
+      await garageCollection.insertOne(newGarageDocument);
+    }
+
     res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
+
   } catch (error) {
     console.log(error);
     res.render("errorMessage", { message: "Error predicting price or generating advice" });
@@ -658,6 +689,22 @@ app.post('/priceChat', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('An error occurred please resend your message.');
+  }
+});
+
+app.get('/garage',sessionValidation, async (req, res) => {
+  //find document in garage collection (userid matches the document in collection) 
+  const userId = req.session._id;
+
+  try {
+    console.log('User ID:', req.session._id);
+    const userGarage = await garageCollection.find({ userID: userId }).toArray();
+    console.log('User Garage:', userGarage);
+    res.render("predict", { price: userGarage[0].price, carData: userGarage[0].carData, advice: userGarage[0].advice, logoUrl: userGarage[0].logoUrl });
+  } catch (err) {
+    console.log('User ID:', req.session._id);
+    console.log('Error:', err);
+    res.render("errorMessage", { message: "You don't have any cars saved yet" });
   }
 });
 

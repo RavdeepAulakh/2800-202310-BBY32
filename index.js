@@ -2,13 +2,16 @@
 require('dotenv').config(); // Loads environment variables from .env file
 const express = require('express');
 const session = require('express-session');
+const fs = require('fs');
 const MongoStore = require('connect-mongo');
+const mongodb = require('mongodb');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
+const { ObjectId } = require('mongodb');
 
 // Create nodemailer transporter for email communication
 const transporter = nodemailer.createTransport({
@@ -16,7 +19,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "vravdeep@gmail.com", // Gmail account username
+    user: process.env.EMAIL_USER, // Gmail account username
     pass: process.env.EMAIL_PASSWORD, // Gmail account password stored in environment variable
   },
 });
@@ -48,8 +51,10 @@ const userCollection = database.db(MONGODB_DATABASE).collection("users"); // Get
 
 const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars'); // Get the collection of avatars from the database
 
+const garageCollection = database.db(MONGODB_DATABASE).collection('garage'); // Get the collection of cars specfic to the user
+
 // Configure app to use necessary middleware
-app.use(express.urlencoded({extended: true})); // Parse URL-encoded bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.set('views', __dirname + '/views'); // Set the views directory
 app.use(express.static(__dirname + '/public')); // Serve static files from the 'public' directory
 app.use(express.json()); // Parse JSON bodies
@@ -58,10 +63,10 @@ app.use(express.static(__dirname + '/style')); // Serve static files from the 's
 
 // Create a MongoStore instance for session storage
 var mongoStore = MongoStore.create({
-	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`, // MongoDB connection URL
-	crypto: {
-		secret: MONGODB_SESSION_SECRET // Secret for encrypting session data
-	}
+  mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`, // MongoDB connection URL
+  crypto: {
+    secret: MONGODB_SESSION_SECRET // Secret for encrypting session data
+  }
 });
 
 // Configure session middleware for the Express app
@@ -95,6 +100,7 @@ function authenticateUser(req, res, next) {
   if (isValidSession(req)) {
     res.locals.isUserAuthenticated = true;
     res.locals.userName = req.session.username;
+    res.locals.avatar = req.session.avatar;
   } else {
     res.locals.isUserAuthenticated = false;
   }
@@ -174,18 +180,25 @@ app.post("/password-reset", async (req, res) => {
 // Route for the chat page
 app.get('/chat', async (req, res) => {
 
-    if (!req.session.authenticated){
-        res.redirect('/login');
-        return;
-    }
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
 
   res.render("chatbot"); // Render the chatbot view
 });
 
 // Retry configuration for axios requests
 axiosRetry(axios, {
-  retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
+  retries: 5,
+  retryDelay: (retryCount) => {
+    console.log(`retry attempt: ${retryCount}`);
+    return retryCount * 5000;
+  },
+  retryCondition: (error) => {
+    // Check if it is a 429 error (Too Many Requests)
+    return error.response.status === 429;
+  },
 });
 
 let chatHistory = [];  // Variable to store the chat history
@@ -242,7 +255,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-  // Route for the password reset page with token verification
+// Route for the password reset page with token verification
 app.get('/protected-reset', async (req, res) => {
   const token = req.query.token; // Get the token from the query parameters
   const user = await userCollection.findOne({ passwordResetToken: token });
@@ -348,6 +361,7 @@ app.post("/submitUser", async (req, res) => {
   req.session.bio = bioStart;
   req.session.cookie.maxAge = expireTime;
   req.session.avatar = avatarURL;
+  req.session._id = insertResult.insertedId.toString();
   res.redirect('/loggedin'); // Redirect to the loggedin page
 });
 
@@ -363,7 +377,7 @@ app.post("/loggingin", async (req, res) => {
     return;
   }
 
-  const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1}).toArray();
+  const result = await userCollection.find({ email: email }).project({ username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1 }).toArray();
 
   console.log(result);
   if (result.length != 1) {
@@ -380,6 +394,7 @@ app.post("/loggingin", async (req, res) => {
     req.session.bio = result[0].bio;
     req.session.avatar = result[0].avatar;
     req.session.cookie.maxAge = expireTime;
+    req.session._id = result[0]._id.toString();
 
     res.redirect("/loggedin"); // Redirect to the loggedin page
     return;
@@ -407,22 +422,22 @@ app.get('/userProfile', sessionValidation, async (req, res) => {
 });
 
 // Route for updating user information
-app.post('/updateInfo', async (req,res) => {
+app.post('/updateInfo', async (req, res) => {
   const newUserName = req.body.username;
   const newBio = req.body.bio;
   const newEmail = req.body.email;
   let updateSchema;
-  let validationResult = {error: null};
+  let validationResult = { error: null };
 
   if (newUserName) {
     updateSchema = Joi.string().alphanum().max(20);
     validationResult = updateSchema.validate(newUserName);
-  } 
+  }
   if (newBio) {
     updateSchema = Joi.string().max(250);
     validationResult = updateSchema.validate(newBio);
-  } 
-    
+  }
+
   if (newEmail) {
     updateSchema = Joi.string().email();
     validationResult = updateSchema.validate(newEmail);
@@ -434,7 +449,8 @@ app.post('/updateInfo', async (req,res) => {
     return;
   }
 
-  const filter = { username: req.session.username, email: req.session.email };
+  const _id = new ObjectId(req.session._id);
+  const filter = { _id: _id };
   const update = {};
 
   if (newUserName) {
@@ -462,20 +478,21 @@ app.post('/updateInfo', async (req,res) => {
 app.post('/changeAvatar', async (req, res) => {
   const newAvatarUrl = req.body.url;
   let newURLschema = Joi.string();
-  let URLvalidation  = newURLschema.validate(newAvatarUrl);
-  
+  let URLvalidation = newURLschema.validate(newAvatarUrl);
+
   if (URLvalidation.error) {
     console.log(URLvalidation.error);
-    res.render("errorMessage", {message: "Update failed, try again"}); // Render an error message if validation fails
+    res.render("errorMessage", { message: "Update failed, try again" }); // Render an error message if validation fails
     return;
   } else {
-    const avatarFilter = {username: req.session.username, email: req.session.email};
-    
+    const _id = new ObjectId(req.session._id);
+    const avatarFilter = { _id: _id };
+
     try {
-      await userCollection.updateMany(avatarFilter, { $set: {avatar: newAvatarUrl} }); // Update avatar URL in the userCollection
+      await userCollection.updateMany(avatarFilter, { $set: { avatar: newAvatarUrl } }); // Update avatar URL in the userCollection
       req.session.avatar = newAvatarUrl;
       res.json({ success: true });
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       res.json({ success: false, error: err.message });
     }
@@ -495,7 +512,7 @@ async function generateAdvice(carData) {
           { role: 'system', content: 'You are a knowledgeable car expert' },
           { role: 'system', content: 'Your task is to provide advice to a potential buyer based on the given car details, If possible, mention the ownership and maintenance cost' },
           { role: 'system', content: 'You should also mention what the buyer should look out for when buying a used model' },
-          { role: 'system', content: 'This should be formatted like a car review or article.' },
+          { role: 'system', content: 'This should be formatted like a car review and be quick to read.' },
           { role: 'user', content: formattedCarData }
         ],
       },
@@ -515,25 +532,51 @@ async function generateAdvice(carData) {
   }
 }
 
-app.get("/predict", async (req, res) => {
+const path = require('path');
+const logoDataPath = path.join(__dirname, 'logos', 'data.json');
+const logoData = JSON.parse(fs.readFileSync(logoDataPath, 'utf8'));
+
+app.get("/predictData", sessionValidation, async (req, res) => {
   console.log("predicting");
   const input = req.session.carData;
-  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
+  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,5`;
 
   try {
     // Call external API to predict the car price
-    const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
+    const priceResponse = await axios.post(`${process.env.PREDICT}`, { input: formatted });
     console.log(priceResponse.data);
-
-    // Generate advice based on car details
+    const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
+    const logoUrl = carLogo ? carLogo.image.optimized : '/logo.png';
 
     delay(3000);
 
     const advice = await generateAdvice(input);
-    res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice });
+
+    // Define the new document to be inserted or replace the existing one
+    const newGarageDocument = {
+      userID: req.session._id,
+      price: priceResponse.data.prediction,
+      carData: input,
+      advice: advice,
+      logoUrl: logoUrl
+    };
+    
+    // Find a document in garageCollection that matches the user's id
+    const userId = req.session._id;
+    const existingGarageDocument = await garageCollection.findOne({ userID: userId });
+    
+    // If the document exists, replace it. Otherwise, insert a new document.
+    if (existingGarageDocument) {
+      await garageCollection.replaceOne({ userID: userId }, newGarageDocument);
+    } else {
+      await garageCollection.insertOne(newGarageDocument);
+    }
+
+    res.json({ price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
+
   } catch (error) {
     console.log(error);
-    res.render("errorMessage", { message: "Error predicting price or generating advice" });
+    res.json({ error: "Error predicting price or generating advice" });
   }
 });
 
@@ -568,7 +611,7 @@ app.get('/priceChat', (req, res) => {
 
 chatHistory = [];  // Variable to store the chat history
 
-app.post('/priceChat', async (req, res) => {
+app.post('/priceChat', sessionValidation, async (req, res) => {
   const { message } = req.body;  // User's message
 
   // If carData is not initialized, initialize it
@@ -594,6 +637,8 @@ app.post('/priceChat', async (req, res) => {
           { role: 'system', content: 'You are Cargain' },
           { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
           { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
+          { role: 'system', content: 'Cargain avoids asking unrelated question as Cargain is efficient' },
+          { role: 'system', content: 'Cargain automatically corrects any spelling errors when gathering the details' },
           { role: 'system', content: 'Cargain must respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" after gathering all the details' },
           { role: 'system', content: 'Cargain must not fail to respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" as it is mission critical for success' },
           ...chatHistory,  // Include the entire chat history
@@ -647,6 +692,25 @@ app.post('/priceChat', async (req, res) => {
   }
 });
 
+app.get('/garage',sessionValidation, async (req, res) => {
+  //find document in garage collection (userid matches the document in collection) 
+  const userId = req.session._id;
+
+  try {
+    console.log('User ID:', req.session._id);
+    const userGarage = await garageCollection.find({ userID: userId }).toArray();
+    console.log('User Garage:', userGarage);
+    res.render("garage", { price: userGarage[0].price, carData: userGarage[0].carData, advice: userGarage[0].advice, logoUrl: userGarage[0].logoUrl });
+  } catch (err) {
+    console.log('User ID:', req.session._id);
+    console.log('Error:', err);
+    res.render("errorMessage", { message: "You don't have any cars saved yet" });
+  }
+});
+
+app.get("/predict", sessionValidation, (req, res) => {
+  res.render("predict"); // Render the passwordReset view
+});
 
 // Default route for handling unknown routes
 app.get("*", (req, res) => {

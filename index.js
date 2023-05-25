@@ -50,7 +50,7 @@ const userCollection = database.db(MONGODB_DATABASE).collection("users"); // Get
 const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars'); // Get the collection of avatars from the database
 
 // Configure app to use necessary middleware
-app.use(express.urlencoded({extended: true})); // Parse URL-encoded bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.set('views', __dirname + '/views'); // Set the views directory
 app.use(express.static(__dirname + '/public')); // Serve static files from the 'public' directory
 app.use(express.json()); // Parse JSON bodies
@@ -59,10 +59,10 @@ app.use(express.static(__dirname + '/style')); // Serve static files from the 's
 
 // Create a MongoStore instance for session storage
 var mongoStore = MongoStore.create({
-	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`, // MongoDB connection URL
-	crypto: {
-		secret: MONGODB_SESSION_SECRET // Secret for encrypting session data
-	}
+  mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`, // MongoDB connection URL
+  crypto: {
+    secret: MONGODB_SESSION_SECRET // Secret for encrypting session data
+  }
 });
 
 // Configure session middleware for the Express app
@@ -175,10 +175,10 @@ app.post("/password-reset", async (req, res) => {
 // Route for the chat page
 app.get('/chat', async (req, res) => {
 
-    if (!req.session.authenticated){
-        res.redirect('/login');
-        return;
-    }
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
 
   res.render("chatbot"); // Render the chatbot view
 });
@@ -250,7 +250,7 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-  // Route for the password reset page with token verification
+// Route for the password reset page with token verification
 app.get('/protected-reset', async (req, res) => {
   const token = req.query.token; // Get the token from the query parameters
   const user = await userCollection.findOne({ passwordResetToken: token });
@@ -371,7 +371,7 @@ app.post("/loggingin", async (req, res) => {
     return;
   }
 
-  const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1}).toArray();
+  const result = await userCollection.find({ email: email }).project({ username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1 }).toArray();
 
   console.log(result);
   if (result.length != 1) {
@@ -415,7 +415,7 @@ app.get('/userProfile', sessionValidation, async (req, res) => {
 });
 
 // Route for updating user information
-app.post('/updateInfo', async (req,res) => {
+app.post('/updateInfo', async (req, res) => {
   const newUserName = req.body.username;
   const newBio = req.body.bio;
   const newEmail = req.body.email;
@@ -474,13 +474,13 @@ app.post('/changeAvatar', async (req, res) => {
 
   if (URLvalidation.error) {
     console.log(URLvalidation.error);
-    res.render("errorMessage", {message: "Update failed, try again"}); // Render an error message if validation fails
+    res.render("errorMessage", { message: "Update failed, try again" }); // Render an error message if validation fails
     return;
   } else {
     const avatarFilter = { username: req.session.username, email: req.session.email };
 
     try {
-      await userCollection.updateMany(avatarFilter, { $set: {avatar: newAvatarUrl} }); // Update avatar URL in the userCollection
+      await userCollection.updateMany(avatarFilter, { $set: { avatar: newAvatarUrl } }); // Update avatar URL in the userCollection
       req.session.avatar = newAvatarUrl;
       res.json({ success: true });
     } catch (err) {
@@ -530,7 +530,7 @@ const logoData = JSON.parse(fs.readFileSync(logoDataPath, 'utf8'));
 app.get("/predict", async (req, res) => {
   console.log("predicting");
   const input = req.session.carData;
-  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
+  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,5`;
 
   try {
     // Call external API to predict the car price
@@ -542,12 +542,34 @@ app.get("/predict", async (req, res) => {
     delay(3000);
 
     const advice = await generateAdvice(input);
-    res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
+    res.json({ price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
   } catch (error) {
     console.log(error);
-    res.render("errorMessage", { message: "Error predicting price or generating advice" });
+    res.json({ error: "Error predicting price or generating advice" });
   }
 });
+
+// app.get("/predict", async (req, res) => {
+//   console.log("predicting");
+//   const input = req.session.carData;
+//   const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2023,5`;
+
+//   try {
+//     // Call external API to predict the car price
+//     const priceResponse = await axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', { input: formatted });
+//     console.log(priceResponse.data);
+//     const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
+//     const logoUrl = carLogo ? carLogo.image.optimized : 'default-logo-url';
+
+//     delay(3000);
+
+//     const advice = await generateAdvice(input);
+//     res.render("predict", { price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
+//   } catch (error) {
+//     console.log(error);
+//     res.render("errorMessage", { message: "Error predicting price or generating advice" });
+//   }
+// });
 
 // Function to introduce a delay using a Promise
 function delay(time) {
@@ -648,7 +670,7 @@ app.post('/priceChat', async (req, res) => {
       console.log(req.session.carData);
       // If all car details are collected, send a signal to redirect to /predict
       if (Object.values(req.session.carData).every(val => val !== null)) {
-        return res.json({ redirect: '/predict' });
+        return res.json({ redirect: '/predictl' });
       }
       // If information is collected, send the assistant's reply back to the client
       res.json({ reply });
@@ -661,8 +683,8 @@ app.post('/priceChat', async (req, res) => {
   }
 });
 
-app.get("/loading", (req, res) => {
-  res.render("loading"); // Render the passwordReset view
+app.get("/predictl", (req, res) => {
+  res.render("predict"); // Render the passwordReset view
 });
 
 // Default route for handling unknown routes

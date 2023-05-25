@@ -661,6 +661,9 @@ app.post('/priceChat', async (req, res) => {
   }
 });
 
+app.get("/loading", (req, res) => {
+  res.render("loading"); // Render the passwordReset view
+});
 
 // Default route for handling unknown routes
 app.get("*", (req, res) => {

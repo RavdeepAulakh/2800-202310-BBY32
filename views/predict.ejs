@@ -13,60 +13,48 @@
 </section>
 
 <script>
-fetch("/predictData")
-  .then((response) => response.json())
-  .then((data) => {
-    if (data.error) {
-      // Handle error
-      document.getElementById(
-        "content"
-      ).innerHTML = `<h1>Error: ${data.error}</h1>`;
-    } else {
-      // Round the price value
-      data.price = Math.round(data.price);
+  fetch("/predictData")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.error) {
+        // Handle error
+        document.getElementById(
+          "content"
+        ).innerHTML = `<h1>Error: ${data.error}</h1>`;
+      } else {
+        // Round the price value
+        data.price = Math.round(data.price);
 
-      // Update the page with the fetched data
-      document.getElementById("content").innerHTML = `
-        <div class="mb-4">
-          <div class="text-center">
-            <img src="${data.logoUrl}" alt="${data.carData.manufacturer} Logo" class="mx-auto" style="width: 250px" />
-            <div class="mt-3">
-              <h1 class="text-4xl font-bold">Estimated Market Value: $${data.price}</h1>
+        // Update the page with the fetched data
+        document.getElementById("content").innerHTML = `
+          <div class="mb-4">
+            <div class="text-center">
+              <img src="${data.logoUrl}" alt="${data.carData.manufacturer} Logo" class="mx-auto" style="width: 250px" />
+              <div class="mt-3">
+                <h1 class="text-4xl font-bold">Estimated Market Value: $${data.price}</h1>
+                <br />
+                <p>
+                  ${data.carData.year} ${data.carData.manufacturer} ${data.carData.model}
+                </p>
+                <p>
+                  Mileage: ${data.carData.odometer} Condition: ${data.carData.condition}
+                  Title Status: ${data.carData.title_status}
+                </p>
+              </div>
               <br />
-              <p>
-                ${data.carData.year} ${data.carData.manufacturer} ${data.carData.model}
-              </p>
-              <p>
-                Mileage: ${data.carData.odometer} Condition: ${data.carData.condition}
-                Title Status: ${data.carData.title_status}
-              </p>
-            </div>
-            <br />
-            <div class="mt-3">
-              <div class="max-w-lg mx-auto">
-                <h2 class="text-xl font-bold">About this car:</h2>
-                <div class="mt-4 text-left">
-                  <p id="advice" class="px-4 py-2 bg-gray-200 rounded-lg">Generating...</p>
+              <div class="mt-3">
+                <div class="max-w-lg mx-auto">
+                  <h2 class="text-xl font-bold">About this car:</h2>
+                  <div class="mt-4 text-left">
+                    <p class="px-4 py-2 bg-gray-200 rounded-lg">${data.advice}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      `;
-
-      // Fetch the advice
-      fetch("/generateAdvice")
-        .then((response) => response.json())
-        .then((adviceData) => {
-          if (adviceData.error) {
-            document.getElementById("advice").textContent = `Error: ${adviceData.error}`;
-          } else {
-            // Update the page with the fetched advice
-            document.getElementById("advice").textContent = adviceData.advice;
-          }
-        });
-    }
-  });
+        `;
+      }
+    });
 </script>
 
 <%- include("templates/footer") %>

@@ -532,6 +532,33 @@ async function generateAdvice(carData) {
   }
 }
 
+app.get("/generateAdvice", sessionValidation, async (req, res) => {
+  console.log("Generating advice");
+  const input = req.session.carData;
+
+  try {
+    const advice = await generateAdvice(input);
+
+    // Find the user's document in the garageCollection
+    const userId = req.session._id;
+    const userDocument = await garageCollection.findOne({ userID: userId });
+
+    if (userDocument) {
+      // Update the document with the generated advice
+      await garageCollection.updateOne(
+        { userID: userId },
+        { $set: { advice: advice } }
+      );
+    }
+
+    res.json({ advice: advice });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ error: "Error generating advice" });
+  }
+});
+
 const path = require('path');
 const logoDataPath = path.join(__dirname, 'logos', 'data.json');
 const logoData = JSON.parse(fs.readFileSync(logoDataPath, 'utf8'));
@@ -548,16 +575,11 @@ app.get("/predictData", sessionValidation, async (req, res) => {
     const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
     const logoUrl = carLogo ? carLogo.image.optimized : '/logo.png';
 
-    delay(3000);
-
-    const advice = await generateAdvice(input);
-
     // Define the new document to be inserted or replace the existing one
     const newGarageDocument = {
       userID: req.session._id,
       price: priceResponse.data.prediction,
       carData: input,
-      advice: advice,
       logoUrl: logoUrl
     };
     
@@ -572,11 +594,38 @@ app.get("/predictData", sessionValidation, async (req, res) => {
       await garageCollection.insertOne(newGarageDocument);
     }
 
-    res.json({ price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
+    res.json({ price: priceResponse.data.prediction, carData: input, logoUrl: logoUrl });
 
   } catch (error) {
     console.log(error);
-    res.json({ error: "Error predicting price or generating advice" });
+    res.json({ error: "Error predicting price" });
+  }
+});
+
+app.get("/generateAdvice", sessionValidation, async (req, res) => {
+  console.log("Generating advice");
+  const input = req.session.carData;
+
+  try {
+    const advice = await generateAdvice(input);
+
+    // Find the user's document in the garageCollection
+    const userId = req.session._id;
+    const userDocument = await garageCollection.findOne({ userID: userId });
+
+    if (userDocument) {
+      // Update the document with the generated advice
+      await garageCollection.updateOne(
+        { userID: userId },
+        { $set: { advice: advice } }
+      );
+    }
+
+    res.json({ advice: advice });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ error: "Error generating advice" });
   }
 });
 

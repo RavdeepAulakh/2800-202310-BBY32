@@ -546,7 +546,7 @@ app.get("/predictData", sessionValidation, async (req, res) => {
     const priceResponse = await axios.post(`${process.env.PREDICT}`, { input: formatted });
     console.log(priceResponse.data);
     const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
-    const logoUrl = carLogo ? carLogo.image.optimized : 'default-logo-url';
+    const logoUrl = carLogo ? carLogo.image.optimized : '/logo.png';
 
     delay(3000);
 

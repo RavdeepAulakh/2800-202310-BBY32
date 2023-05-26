@@ -110,23 +110,6 @@ function authenticateUser(req, res, next) {
 
 app.use(authenticateUser);
 
-function isAdmin(req) {
-  if (req.session.user_type == "admin") {
-    return true;
-  }
-  return false;
-}
-
-function adminAuthorization(req, res, next) {
-  if (!isAdmin(req)) {
-    res.status(403);
-    res.render("errorMessage", { message: "Not Authorized" });
-    return;
-  } else {
-    next();
-  }
-}
-
 // Route for the home page
 app.get("/", (req, res) => {
   if (req.session.authenticated) {
@@ -288,16 +271,6 @@ app.post('/protected-reset', async (req, res) => {
   res.render("passwordResetSuccess"); // Render the passwordResetSuccess view
 });
 
-// Route for the submitEmail page
-app.get("/submitEmail", (req, res) => {
-  var email = req.body.email;
-  if (!email) {
-    res.redirect("/contact?missing=1"); // Redirect to the contact page if email is missing
-  } else {
-    res.render("submitEmail", { email: email }); // Render the submitEmail view with the email
-  }
-});
-
 // Route for the createUser page
 app.get("/createUser", (req, res) => {
   res.render("createUser"); // Render the createUser view
@@ -348,7 +321,7 @@ app.post("/submitUser", async (req, res) => {
   const avatar = await avatarCollection.aggregate([{ $sample: { size: 1 } }]).next();
   const avatarURL = avatar ? avatar.url : '';
 
-  await userCollection.insertOne({
+  let insertResult = await userCollection.insertOne({
     username: username,
     password: hashedPassword,
     email: email,

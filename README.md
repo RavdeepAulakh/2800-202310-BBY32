@@ -5,6 +5,15 @@
 ## Project Pitch
 Our project, Cargain, is developing AI powered used car price estimator to help people who are new to the used car market find reliable and affordable vehicles with machine learning and generative AI
 
+## Who are we
+
+| Name                                          | Role                              | GitHub                                        | LinkedIn                                                              |
+| --------------------------------------------- | --------------------------------- | --------------------------------------------- | --------------------------------------------------------------------- |
+| [Ravdeep](https://github.com/RavdeepAulakh)      | Frontend Developer, Product Owner | [GitHub](https://github.com/RavdeepAulakh)      | [LinkedIn](https://www.linkedin.com/in/ravdeepaulakh/)              |
+| [Rohil](https://github.com/rohilpatel15)     | Frontend Developer, QA Engineer   | [GitHub](https://github.com/rohilpatel15)       | [LinkedIn]()      |
+| [Hyuk](https://github.com/hyukpk) | Lead Developer                    | [GitHub](https://github.com/hyukpk) | [LinkedIn](https://www.linkedin.com/in/hyukpk/) |
+| [Maximillian](https://github.com/Maximillainy)      | Project Manager, AI Integration   | [GitHub](https://github.com/Maximillainy)     | [LinkedIn](https://www.linkedin.com/in/maximillianyong/)                 |
+
 ## Technologies 
 EJS, Python, CSS, Javascript, MongoDB, OpenAI API, Node, Tailwind, Bootstrap, Vercel, Scikit-learn, Flask
 

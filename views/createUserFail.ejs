@@ -1,0 +1,76 @@
+<!-- This code includes the header template, the footer template, the Sign-up page for the user, and an error message if something is incorrect. -->
+
+<!-- Include the "header" template -->
+<%- include("templates/header") %>
+
+<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+
+  <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+
+    <!-- Heading for the sign-up form -->
+    <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 option">Sign up your account</h2>
+
+  </div>
+
+  <!-- Form container -->
+  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+
+    <!-- Sign-up form with spacing and submit action -->
+    <form class="space-y-6 w-full" action="/submitUser" method="POST">
+
+      <!-- Username input field -->
+      <div>
+        <label for="username" class="block text-sm font-medium leading-6 text-gray-900 option">Username</label>
+        <div class="mt-2">
+          <input id="username" name="username" type="text" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 option">
+        </div>
+      </div>
+      
+      <!-- Email address input field -->
+      <div>
+        <label for="email" class="block text-sm font-medium leading-6 text-gray-900 option">Email address</label>
+        <div class="mt-2">
+          <input id="email" name="email" type="email" autocomplete="email" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 option">
+        </div>
+      </div>
+
+      <!-- Password input field -->
+      <div>
+        <div class="flex items-center justify-between">
+          <label for="password" class="block text-sm font-medium leading-6 text-gray-900 option">Password</label>
+        </div>
+        <div class="mt-2">
+          <input id="password" name="password" type="password" autocomplete="current-password" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 option">
+        </div>
+      </div>
+
+      <!-- Sign-up button -->
+      <div>
+        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 option">Sign up</button>
+      </div>
+    </form>
+
+  </div>
+
+  <!-- Container for the error message -->
+  <div class="flex justify-center">
+    <div class="bg-red-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md option feedback w-full sm:w-auto" role="alert">
+      <div class="flex">
+        <div class="py-1">
+          <!-- Error icon -->
+          <svg class="fill-current h-6 w-6 text-teal-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+            <path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/>
+          </svg>
+        </div>
+        <div>
+          <!-- Error message text -->
+          <p class="font-bold">Email Already in use!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Include the "footer" template -->
+<%- include("templates/footer") %>

@@ -1,34 +1,39 @@
-
-require('dotenv').config();
+// Require necessary modules
+require('dotenv').config(); // Loads environment variables from .env file
 const express = require('express');
 const session = require('express-session');
+const fs = require('fs');
 const MongoStore = require('connect-mongo');
+const mongodb = require('mongodb');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
+const { ObjectId } = require('mongodb');
+
+// Create nodemailer transporter for email communication
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   secure: true,
   auth: {
-    user: "vravdeep@gmail.com",
-    pass: process.env.EMAIL_PASSWORD,
+    user: process.env.EMAIL_USER, // Gmail account username
+    pass: process.env.EMAIL_PASSWORD, // Gmail account password stored in environment variable
   },
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; // Use the specified port from environment variable or default to 3000
 
-const app = express();
-app.set("view engine", "ejs");
+const app = express(); // Create express app
+app.set("view engine", "ejs"); // Set EJS as the view engine
 
-const Joi = require("joi");
+const Joi = require("joi"); // Require Joi for data validation
 
-const expireTime = 1 * 60 * 60 * 1000; //expires after 1 hour  (hours * minutes * seconds * millis)
+const expireTime = 1 * 60 * 60 * 1000; // Expire time for session set to 1 hour (hours * minutes * seconds * milliseconds)
 
-/* secret information section */
+/* Secret information section */
 const {
   MONGODB_HOST,
   MONGODB_USER,
@@ -36,39 +41,45 @@ const {
   MONGODB_DATABASE,
   MONGODB_SESSION_SECRET,
   NODE_SESSION_SECRET,
-} = process.env;
+} = process.env; // Load secret environment variables
 
 /* END secret section */
 
-const database = require("./databaseConnection.js");
+const database = require("./js/databaseConnection.js"); // Require the database connection module
 
-const userCollection = database.db(MONGODB_DATABASE).collection("users");
+const userCollection = database.db(MONGODB_DATABASE).collection("users"); // Get the collection of users from the database
 
-const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars');
+const avatarCollection = database.db(MONGODB_DATABASE).collection('avatars'); // Get the collection of avatars from the database
 
-app.use(express.urlencoded({extended: true}));
-app.set('views', __dirname + '/views');
-app.use(express.static(__dirname + '/public'));
-app.use(express.json());
-app.use(express.static(__dirname + '/js'));
-app.use(express.static(__dirname + '/style'));
+const garageCollection = database.db(MONGODB_DATABASE).collection('garage'); // Get the collection of cars specfic to the user
 
+// Configure app to use necessary middleware
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.set('views', __dirname + '/views'); // Set the views directory
+app.use(express.static(__dirname + '/public')); // Serve static files from the 'public' directory
+app.use(express.json()); // Parse JSON bodies
+app.use(express.static(__dirname + '/js')); // Serve static files from the 'js' directory
+app.use(express.static(__dirname + '/style')); // Serve static files from the 'style' directory
+
+// Create a MongoStore instance for session storage
 var mongoStore = MongoStore.create({
-	mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`,
-	crypto: {
-		secret: MONGODB_SESSION_SECRET
-	}
-})
+  mongoUrl: `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}/Comp2800Project`, // MongoDB connection URL
+  crypto: {
+    secret: MONGODB_SESSION_SECRET // Secret for encrypting session data
+  }
+});
 
+// Configure session middleware for the Express app
 app.use(
   session({
-    secret: NODE_SESSION_SECRET,
-    store: mongoStore, //default is memory store
-    saveUninitialized: false,
-    resave: true,
+    secret: NODE_SESSION_SECRET, // Secret used to sign the session ID cookie
+    store: mongoStore, // Store session data in MongoDB using MongoStore
+    saveUninitialized: false, // Do not save uninitialized sessions
+    resave: true, // Resave session even if it wasn't modified
   })
 );
 
+// Function to check if the session is valid and authenticated
 function isValidSession(req) {
   if (req.session.authenticated) {
     return true;
@@ -76,13 +87,28 @@ function isValidSession(req) {
   return false;
 }
 
+// Middleware function for session validation
 function sessionValidation(req, res, next) {
   if (isValidSession(req)) {
-    next();
+    next(); // Proceed to the next middleware if session is valid
   } else {
     res.redirect("/login");
   }
 }
+
+function authenticateUser(req, res, next) {
+  if (isValidSession(req)) {
+    res.locals.isUserAuthenticated = true;
+    res.locals.userName = req.session.username;
+    res.locals.avatar = req.session.avatar;
+  } else {
+    res.locals.isUserAuthenticated = false;
+  }
+
+  next();
+}
+
+app.use(authenticateUser);
 
 function isAdmin(req) {
   if (req.session.user_type == "admin") {
@@ -101,24 +127,27 @@ function adminAuthorization(req, res, next) {
   }
 }
 
+// Route for the home page
 app.get("/", (req, res) => {
   if (req.session.authenticated) {
-    res.redirect("/loggedin");
+    res.redirect("/loggedin"); // Redirect to the loggedin page if session is authenticated
     return;
   }
-  res.render("index");
+  res.render("index"); // Render the index view if session is not authenticated
 });
 
+// Route for the password reset page
 app.get("/password-reset", (req, res) => {
-  res.render("passwordReset");
+  res.render("passwordReset"); // Render the passwordReset view
 });
 
+// Route for handling the password reset form submission
 app.post("/password-reset", async (req, res) => {
   const email = req.body.email;
   const user = await userCollection.findOne({ email: email });
 
   if (!user) {
-    return res.render("passwordResetEmailFail");
+    return res.render("passwordResetEmailFail"); // Render the passwordResetEmailFail view if user does not exist
   }
 
   const token = crypto.randomBytes(20).toString("hex");
@@ -137,270 +166,207 @@ app.post("/password-reset", async (req, res) => {
     html: `You have requested to reset your password. Please follow this <a href="${resetLink}">link</a> to reset your password.`,
   };
 
+  // Send the password reset email using the transporter
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.log(error);
       return res.send("Error sending email.");
     }
     console.log("Email sent: " + info.response);
-    res.render("passwordResetEmailSent");
+    res.render("passwordResetEmailSent"); // Render the passwordResetEmailSent view if email is sent successfully
   });
 });
 
-  app.get('/chat', async (req, res) => {
+// Route for the chat page
+app.get('/chat', async (req, res) => {
 
-    if (!req.session.authenticated){
-        res.redirect('/login');
-        return;
-    }
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
 
-    res.render("chatbot");
-  });
+  res.render("chatbot"); // Render the chatbot view
+});
 
-  axiosRetry(axios, {
-    retries: 3,
-    retryDelay: axiosRetry.exponentialDelay,
-  });
-  
-  let chatHistory = [];  // Variable to store the chat history
+// Retry configuration for axios requests
+axiosRetry(axios, {
+  retries: 5,
+  retryDelay: (retryCount) => {
+    console.log(`retry attempt: ${retryCount}`);
+    return retryCount * 5000;
+  },
+  retryCondition: (error) => {
+    // Check if it is a 429 error (Too Many Requests)
+    return error.response.status === 429;
+  },
+});
 
-  app.post('/chat', async (req, res) => {
-    try {
-      const { message } = req.body;
-      console.log('Received message:', message);
-  
-      // Add the user's message to the chat history
-      chatHistory.push({ role: 'user', content: message });
-  
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about them selves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well.' },
-            ...chatHistory,  // Include the entire chat history
-          ],
+let chatHistory = [];  // Variable to store the chat history
+
+// Route for handling chatbot messages
+app.post('/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    console.log('Received message:', message);
+
+    // Add the user's message to the chat history
+    chatHistory.push({ role: 'user', content: message });
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant that is going to help the user decide what car they should buy based off what they tell you about themselves. Make sure to ask a few questions about the user to gain a better understanding of them and when giving your recommendations list them out and make sure to give a short review for why each is right for the user be specific give exact car year and trim as well' },
+          { role: 'system', content: 'If there is something not related to cars that the user asks you must respond with "Sorry, I am here to assist you with cars. Can you try again?"' },
+          ...chatHistory,  // Include the entire chat history
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, // Set the API key for authorization
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          },
-        }
-      );
-  
-      console.log('OpenAI API response:', response.data);
-  
-      const { choices } = response.data;
-  
-      if (choices && choices.length > 0) {
-        const reply = response.data.choices[0].message.content;
-        if (reply) {
-          // Add the assistant's reply to the chat history
-          chatHistory.push({ role: 'assistant', content: reply });
-  
-          console.log('Generated reply:', reply);
-          res.json({ reply });
-        } else {
-          console.log('No reply generated.');
-          res.status(500).send('No reply generated.');
-        }
+      }
+    );
+
+    console.log('OpenAI API response:', response.data);
+
+    const { choices } = response.data;
+
+    if (choices && choices.length > 0) {
+      const reply = response.data.choices[0].message.content;
+      if (reply) {
+        // Add the assistant's reply to the chat history
+        chatHistory.push({ role: 'assistant', content: reply });
+
+        console.log('Generated reply:', reply);
+        res.json({ reply }); // Send the reply as JSON response
       } else {
         console.log('No reply generated.');
-        res.status(500).send('No reply generated.');
+        res.status(500).send('No reply generated.'); // Send error response if no reply is generated
       }
-    } catch (error) {
-      console.error(error);
-      res.status(500).send('An error occurred.');
+    } else {
+      console.log('No reply generated.');
+      res.status(500).send('No reply generated.'); // Send error response if no reply is generated
     }
-  });
-  
-
-  app.get('/protected-reset', async (req, res) => {
-    const token = req.query.token;
-    const user = await userCollection.findOne({ passwordResetToken: token });
-  
-    if (!user) {
-      return res.render("tokenExpired");
-    }
-  
-    res.render('ActualResetPage', { token: token });
-  });
-  
-  app.post('/protected-reset', async (req, res) => {
-    const token = req.body.token;
-    const user = await userCollection.findOne({ passwordResetToken: token });
-  
-    if (!user) {
-      return res.send('Error: Invalid or expired token.');
-    }
-  
-    const password = req.body.password;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-    await userCollection.updateOne(
-      { _id: user._id },
-      { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } }
-    );
-  
-    res.render("passwordResetSuccess");
-  });
-
-app.get("/nosql-injection", async (req, res) => {
-  var username = req.query.user;
-
-  if (!username) {
-    res.render("errorMessage", {
-      message: `no user provided - try /nosql-injection?user=name or /nosql-injection?user[$ne]=name`,
-    });
-    return;
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred please resend your messafe.'); // Send error response if an error occurs
   }
-  console.log("user: " + username);
+});
 
-  const schema = Joi.string().max(20).required();
-  const validationResult = schema.validate(username);
+// Route for the password reset page with token verification
+app.get('/protected-reset', async (req, res) => {
+  const token = req.query.token; // Get the token from the query parameters
+  const user = await userCollection.findOne({ passwordResetToken: token });
 
-  //If we didn't use Joi to validate and check for a valid URL parameter below
-  // we could run our userCollection.find and it would be possible to attack.
-  // A URL parameter of user[$ne]=name would get executed as a MongoDB command
-  // and may result in revealing information about all users or a successful
-  // login without knowing the correct password.
-  if (validationResult.error != null) {
-    console.log(validationResult.error);
-    res.render("errorMessage", {
-      message: "A NoSQL injection attack was detected!!",
-    });
-    return;
+  if (!user) {
+    return res.render("tokenExpired"); // Render the tokenExpired view if user does not exist
   }
 
-  const result = await userCollection
-    .find({ username: username })
-    .project({ username: 1, password: 1, _id: 1 })
-    .toArray();
-
-  console.log(result);
-
-  res.render("hellomessage", { username: username });
+  res.render('ActualResetPage', { token: token }); // Render the ActualResetPage view with the token
 });
 
-app.get("/about", (req, res) => {
-  var color = req.query.color;
+// Route for handling the password reset form submission
+app.post('/protected-reset', async (req, res) => {
+  const token = req.body.token; // Get the token from the request body
+  const user = await userCollection.findOne({ passwordResetToken: token });
 
-  res.render("about", { color: color });
+  if (!user) {
+    return res.send('Error: Invalid or expired token.'); // Send error response if user does not exist
+  }
+
+  const password = req.body.password;
+  const hashedPassword = await bcrypt.hash(password, saltRounds); // Hash the new password
+
+  await userCollection.updateOne(
+    { _id: user._id },
+    { $set: { password: hashedPassword }, $unset: { passwordResetToken: '' } } // Update the user's password and remove the passwordResetToken field
+  );
+
+  res.render("passwordResetSuccess"); // Render the passwordResetSuccess view
 });
 
-app.get("/contact", (req, res) => {
-  var missingEmail = req.query.missing;
-  res.render("contact", { missing: missingEmail });
-});
-
+// Route for the submitEmail page
 app.get("/submitEmail", (req, res) => {
   var email = req.body.email;
   if (!email) {
-    res.redirect("/contact?missing=1");
+    res.redirect("/contact?missing=1"); // Redirect to the contact page if email is missing
   } else {
-    res.render("submitEmail", { email: email });
+    res.render("submitEmail", { email: email }); // Render the submitEmail view with the email
   }
 });
 
-app.get("/admin", sessionValidation, adminAuthorization, async (req, res) => {
-  const result = await userCollection
-    .find()
-    .project({ username: 1, user_type: 1, email: 1, _id: 1 })
-    .toArray();
-
-  res.render("admin", { users: result });
-});
-
-// Promote user to admin
-app.post("/admin/promote", async (req, res) => {
-  const email = req.body.email;
-
-  try {
-    // Update the user's user_type in the database
-    await userCollection.updateOne(
-      { email: email },
-      { $set: { user_type: "admin" } }
-    );
-    console.log("User promoted to admin:", email);
-    res.redirect("/admin");
-  } catch (error) {
-    console.error("Error promoting user:", error);
-    res.redirect("/admin");
-  }
-});
-
-// Demote admin to user
-app.post("/admin/demote", async (req, res) => {
-  const email = req.body.email;
-
-  try {
-    // Update the user's user_type in the database
-    await userCollection.updateOne(
-      { email: email },
-      { $set: { user_type: "user" } }
-    );
-    console.log("Admin demoted to user:", email);
-    res.redirect("/admin");
-  } catch (error) {
-    console.error("Error demoting admin:", error);
-    res.redirect("/admin");
-  }
-});
-
+// Route for the createUser page
 app.get("/createUser", (req, res) => {
-  res.render("createUser");
+  res.render("createUser"); // Render the createUser view
 });
 
+// Route for the login page
 app.get("/login", (req, res) => {
-  res.render("login");
+  res.render("login"); // Render the login view
 });
 
+// Route for handling the submitUser form submission
 app.post("/submitUser", async (req, res) => {
   var username = req.body.username;
   var password = req.body.password;
   var email = req.body.email;
   var bioStart = "I am a member of the Cargain app!";
 
-    if (!email){
-        return res.render("submitError", {message: "Email cannot be blank"});
-    }
-    if(!password){
-        return res.render("submitError", {message: "Password cannot be blank"});
-    }
-    if(!username){
-        return res.render("submitError", {message: "Username cannot be blank"});
-    }
-	const schema = Joi.object(
-		{
-			username: Joi.string().alphanum().max(20).required(),
-      email: Joi.string().email().required(),
-			password: Joi.string().max(20).required()
-		});
-	
-	const validationResult = schema.validate({username, password, email});
-	if (validationResult.error != null) {
-	   console.log(validationResult.error);
-	   res.redirect("/createUser");
-	   return;
-   }
+  if (!email) {
+    return res.render("submitError", { message: "Email cannot be blank" }); // Render the submitError view if email is blank
+  }
+  if (!password) {
+    return res.render("submitError", { message: "Password cannot be blank" }); // Render the submitError view if password is blank
+  }
+  if (!username) {
+    return res.render("submitError", { message: "Username cannot be blank" }); // Render the submitError view if username is blank
+  }
 
-  var hashedPassword = await bcrypt.hash(password, saltRounds);
-	// Adding avatar to the user document
+  const schema = Joi.object({
+    username: Joi.string().alphanum().max(20).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().max(20).required(),
+  });
+
+  const validationResult = schema.validate({ username, password, email });
+  if (validationResult.error != null) {
+    console.log(validationResult.error);
+    res.redirect("/createUser"); // Redirect to the createUser page if validation fails
+    return;
+  }
+
+  const existingUser = await userCollection.findOne({ email: email });
+  if (existingUser) {
+    return res.render("createUserFail"); // Render the createUserFail view if user already exists
+  }
+
+  var hashedPassword = await bcrypt.hash(password, saltRounds); // Hash the password
+  // Adding avatar to the user document
   const avatar = await avatarCollection.aggregate([{ $sample: { size: 1 } }]).next();
   const avatarURL = avatar ? avatar.url : '';
 
-	await userCollection.insertOne({username: username, password: hashedPassword, email: email, bio: bioStart, avatar: avatarURL});
-	console.log("Inserted user");
-    req.session.username = username;
-    req.session.authenticated = true;
-    req.session.email = email;
-    req.session.bio = bioStart;
-    req.session.cookie.maxAge = expireTime;
-    req.session.avatar = avatarURL;
-    res.redirect('/loggedin');
+  await userCollection.insertOne({
+    username: username,
+    password: hashedPassword,
+    email: email,
+    bio: bioStart,
+    avatar: avatarURL,
+  });
+  console.log("Inserted user");
+  req.session.username = username;
+  req.session.authenticated = true;
+  req.session.email = email;
+  req.session.bio = bioStart;
+  req.session.cookie.maxAge = expireTime;
+  req.session.avatar = avatarURL;
+  req.session._id = insertResult.insertedId.toString();
+  res.redirect('/loggedin'); // Redirect to the loggedin page
 });
 
+// Route for handling the loggingin form submission
 app.post("/loggingin", async (req, res) => {
   var email = req.body.email;
   var password = req.body.password;
@@ -408,65 +374,71 @@ app.post("/loggingin", async (req, res) => {
   const validationResult = schema.validate(email);
   if (validationResult.error != null) {
     console.log(validationResult.error);
-    res.redirect("/login");
+    res.redirect("/login"); // Redirect to the login page if email validation fails
     return;
   }
 
-	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1}).toArray();
+  const result = await userCollection.find({ email: email }).project({ username: 1, password: 1, user_type: 1, _id: 1, bio: 1, avatar: 1 }).toArray();
 
-	console.log(result);
-	if (result.length != 1) {
-		console.log("user not found");
-		res.render("loginfail");
+  console.log(result);
+  if (result.length != 1) {
+    console.log("user not found");
+    res.render("loginfail"); // Render the loginfail view if user is not found
     return;
   }
 
   if (await bcrypt.compare(password, result[0].password)) {
     req.session.authenticated = true;
     req.session.email = email;
-    req.session.username = result[0].username;;
+    req.session.username = result[0].username;
     req.session.user_type = result[0].user_type;
     req.session.bio = result[0].bio;
     req.session.avatar = result[0].avatar;
-	  req.session.cookie.maxAge = expireTime;
+    req.session.cookie.maxAge = expireTime;
+    req.session._id = result[0]._id.toString();
 
-    res.redirect("/loggedin");
+    res.redirect("/loggedin"); // Redirect to the loggedin page
     return;
   } else {
-    return res.render("loginfail");
+    return res.render("loginfail"); // Render the loginfail view if password is incorrect
   }
 });
 
+
+// Route for the loggedin page with session validation middleware
 app.get("/loggedin", sessionValidation, (req, res) => {
-  res.render("loggedin", { username: req.session.username });
+  res.render("loggedin", { username: req.session.username }); // Render the loggedin view with the username from the session
 });
 
+// Route for handling the logout action
 app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/");
+  req.session.destroy(); // Destroy the session
+  res.redirect("/"); // Redirect to the home page
 });
 
+// Route for the userProfile page with session validation middleware
 app.get('/userProfile', sessionValidation, async (req, res) => {
-  const avatars = await avatarCollection.find().toArray();
-  res.render("userProfile", {user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars})
+  const avatars = await avatarCollection.find().toArray(); // Fetch avatars from the avatarCollection
+  res.render("userProfile", { user: req.session.username, email: req.session.email, bio: req.session.bio, avatar: req.session.avatar, avatars: avatars }); // Render the userProfile view with session data and avatars
 });
 
-app.post('/updateInfo', async (req,res) => {
+// Route for updating user information
+app.post('/updateInfo', async (req, res) => {
   const newUserName = req.body.username;
   const newBio = req.body.bio;
   const newEmail = req.body.email;
   let updateSchema;
-  let validationResult = {error: null};
+  let validationResult = { error: null };
 
   if (newUserName) {
     updateSchema = Joi.string().alphanum().max(20);
     validationResult = updateSchema.validate(newUserName);
-  } 
+  }
   if (newBio) {
     updateSchema = Joi.string().max(250);
     validationResult = updateSchema.validate(newBio);
-  } 
-    
+  }
+
   if (newEmail) {
     updateSchema = Joi.string().email();
     validationResult = updateSchema.validate(newEmail);
@@ -474,11 +446,12 @@ app.post('/updateInfo', async (req,res) => {
 
   if (validationResult.error) {
     console.log(validationResult.error);
-    res.render("errorMessage", { message: "Update failed, try again" });
+    res.render("errorMessage", { message: "Update failed, try again" }); // Render an error message if validation fails
     return;
   }
 
-  const filter = { username: req.session.username, email: req.session.email };
+  const _id = new ObjectId(req.session._id);
+  const filter = { _id: _id };
   const update = {};
 
   if (newUserName) {
@@ -493,62 +466,260 @@ app.post('/updateInfo', async (req,res) => {
     update.email = newEmail;
   }
 
-  await userCollection.updateMany(filter, { $set: update });
+  await userCollection.updateMany(filter, { $set: update }); // Update user information in the userCollection
 
-    // Handle session and redirect as needed
-    req.session.username = newUserName || req.session.username;
-    req.session.bio = newBio || req.session.bio;
-    req.session.email = newEmail || req.session.email;
-    res.redirect('userProfile');
+  // Handle session and redirect as needed
+  req.session.username = newUserName || req.session.username;
+  req.session.bio = newBio || req.session.bio;
+  req.session.email = newEmail || req.session.email;
+  res.redirect('userProfile'); // Redirect to the userProfile page
 });
 
+// Route for changing the avatar
 app.post('/changeAvatar', async (req, res) => {
   const newAvatarUrl = req.body.url;
   let newURLschema = Joi.string();
-  let URLvalidation  = newURLschema.validate(newAvatarUrl);
-  
+  let URLvalidation = newURLschema.validate(newAvatarUrl);
+
   if (URLvalidation.error) {
     console.log(URLvalidation.error);
-    res.render("errorMessage", {message: "Update failed, try again"});
+    res.render("errorMessage", { message: "Update failed, try again" }); // Render an error message if validation fails
     return;
   } else {
-    const avatarFilter = {username: req.session.username, email: req.session.email};
-    
+    const _id = new ObjectId(req.session._id);
+    const avatarFilter = { _id: _id };
+
     try {
-      await userCollection.updateMany(avatarFilter, { $set: {avatar: newAvatarUrl} });
+      await userCollection.updateMany(avatarFilter, { $set: { avatar: newAvatarUrl } }); // Update avatar URL in the userCollection
       req.session.avatar = newAvatarUrl;
       res.json({ success: true });
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       res.json({ success: false, error: err.message });
     }
   }
 });
 
-app.get("/predict", (req, res) => {
-    // const input = req.body.input;
-    input = "2015,honda,civic si coupe 2d,excellent,70000,clean,red,2021,1";
-    console.log(input);
+async function generateAdvice(carData) {
+  const formattedCarData = `Car details: year-${carData.year}, manufacturer-${carData.manufacturer}, model-${carData.model}`;
+
+  try {
+    // Call OpenAI API to generate advice based on car details
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a knowledgeable car expert' },
+          { role: 'system', content: 'Your task is to provide advice to a potential buyer based on the given car details, If possible, mention the ownership and maintenance cost' },
+          { role: 'system', content: 'You should also mention what the buyer should look out for when buying a used model' },
+          { role: 'system', content: 'This should be formatted like a car review and be quick to read.' },
+          { role: 'user', content: formattedCarData }
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+    const advice = response.data.choices[0].message.content;
+    console.log('Generated advice:', advice);
+    return advice;
+  } catch (error) {
+    console.error(error);
+    return "Error generating advice";
+  }
+}
+
+const path = require('path');
+const logoDataPath = path.join(__dirname, 'logos', 'data.json');
+const logoData = JSON.parse(fs.readFileSync(logoDataPath, 'utf8'));
+
+app.get("/predictData", sessionValidation, async (req, res) => {
+  console.log("predicting");
+  const input = req.session.carData;
+  const formatted = `${input.year},${input.manufacturer},${input.model},${input.condition},${input.odometer},${input.title_status},${input.paint_color},2021,5`;
+
+  try {
+    // Call external API to predict the car price
+    const priceResponse = await axios.post(`${process.env.PREDICT}`, { input: formatted });
+    console.log(priceResponse.data);
+    const carLogo = logoData.find(logo => logo.name.toLowerCase() === input.manufacturer.toLowerCase());
+    const logoUrl = carLogo ? carLogo.image.optimized : '/logo.png';
+
+    delay(3000);
+
+    const advice = await generateAdvice(input);
+
+    // Define the new document to be inserted or replace the existing one
+    const newGarageDocument = {
+      userID: req.session._id,
+      price: priceResponse.data.prediction,
+      carData: input,
+      advice: advice,
+      logoUrl: logoUrl
+    };
     
-    // http://moilvqxphf.eu09.qoddiapp.com/predict
-    axios.post('http://moilvqxphf.eu09.qoddiapp.com/predict', {
-        input: input
-    })
-    .then(function (response) {
-        console.log(response.data);
-        res.render("predict", {price: response.data.prediction});
-    })
-    .catch(function (error) {
-        console.log(error);
-        res.render("errorMessage", {message: "Error predicting price"});
-    })
+    // Find a document in garageCollection that matches the user's id
+    const userId = req.session._id;
+    const existingGarageDocument = await garageCollection.findOne({ userID: userId });
+    
+    // If the document exists, replace it. Otherwise, insert a new document.
+    if (existingGarageDocument) {
+      await garageCollection.replaceOne({ userID: userId }, newGarageDocument);
+    } else {
+      await garageCollection.insertOne(newGarageDocument);
+    }
+
+    res.json({ price: priceResponse.data.prediction, carData: input, advice: advice, logoUrl: logoUrl });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ error: "Error predicting price or generating advice" });
+  }
 });
 
+// Function to introduce a delay using a Promise
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
+app.get('/priceChat', (req, res) => {
+
+  if (!req.session.authenticated) {
+    res.redirect('/login');
+    return;
+  }
+
+  // Initialize carData in session
+  req.session.carData = {
+    'year': null,
+    'manufacturer': null,
+    'model': null,
+    'condition': null,
+    'title_status': null,
+    'paint_color': null
+  };
+  chatHistory = [];
+
+  console.log(chatHistory);
+  console.log(req.session.carData);
+  res.render('pricechat', { initialMessage: "Tell me about the car to find the price." });
+});
+
+
+chatHistory = [];  // Variable to store the chat history
+
+app.post('/priceChat', sessionValidation, async (req, res) => {
+  const { message } = req.body;  // User's message
+
+  // If carData is not initialized, initialize it
+  if (!req.session.carData) {
+    return res.redirect('/priceChat');
+  }
+
+  // If all car details are collected, redirect to /predict
+  if (Object.values(req.session.carData).every(val => val !== null)) {
+    return res.redirect('/predict');
+  }
+
+  try {
+    // Add the user's message to the chat history
+    chatHistory.push({ role: 'user', content: message });
+
+    // Call to OpenAI API to generate assistant's reply
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are Cargain' },
+          { role: 'system', content: 'Cargain only goal is to gathering the following car detail from the user: year, manufacturer, model, condition, odometer, title_status, paint_color' },
+          { role: 'system', content: 'Cargain gives the user some advice if the user dosen`t know a detail of the car' },
+          { role: 'system', content: 'Cargain avoids asking unrelated question as Cargain is efficient' },
+          { role: 'system', content: 'Cargain automatically corrects any spelling errors when gathering the details' },
+          { role: 'system', content: 'Cargain must respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" after gathering all the details' },
+          { role: 'system', content: 'Cargain must not fail to respond in this format: "infoCollected-{year},{manufacturer},{model},{condition},{odometer},{title_status},{paint_color}-END" as it is mission critical for success' },
+          ...chatHistory,  // Include the entire chat history
+        ],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      }
+    );
+    delay(2000);
+    const reply = response.data.choices[0].message.content;
+    console.log(chatHistory);
+    console.log('Generated reply:', reply);
+
+    // Search for 'infoCollected-' keyword in the reply
+    const infoIndex = reply.indexOf('infoCollected-');
+
+    // Check if the information is collected
+    if (infoIndex !== -1) {
+      // Extract the data from the reply
+      const dataString = reply.slice(infoIndex + 'infoCollected-'.length);
+      const dataEndIndex = dataString.indexOf('-END');
+      const data = dataString.slice(0, dataEndIndex === -1 ? undefined : dataEndIndex).split(",");
+
+      // Assign the data to the session variable
+      req.session.carData = {
+        'year': data[0],
+        'manufacturer': data[1],
+        'model': data[2],
+        'condition': data[3],
+        'odometer': data[4],
+        'title_status': data[5],
+        'paint_color': data[6]
+      };
+      console.log(req.session.carData);
+      // If all car details are collected, send a signal to redirect to /predict
+      if (Object.values(req.session.carData).every(val => val !== null)) {
+        return res.json({ redirect: '/predict' });
+      }
+      // If information is collected, send the assistant's reply back to the client
+      res.json({ reply });
+    }
+
+    res.json({ reply });  // Send the assistant's reply back to the client
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred please resend your message.');
+  }
+});
+
+app.get('/garage',sessionValidation, async (req, res) => {
+  //find document in garage collection (userid matches the document in collection) 
+  const userId = req.session._id;
+
+  try {
+    console.log('User ID:', req.session._id);
+    const userGarage = await garageCollection.find({ userID: userId }).toArray();
+    console.log('User Garage:', userGarage);
+    res.render("garage", { price: userGarage[0].price, carData: userGarage[0].carData, advice: userGarage[0].advice, logoUrl: userGarage[0].logoUrl });
+  } catch (err) {
+    console.log('User ID:', req.session._id);
+    console.log('Error:', err);
+    res.render("errorMessage", { message: "You haven't viewed any cars recently!" });
+  }
+});
+
+app.get("/predict", sessionValidation, (req, res) => {
+  res.render("predict"); // Render the passwordReset view
+});
+
+// Default route for handling unknown routes
 app.get("*", (req, res) => {
   res.status(404);
-  res.render("404");
+  res.render("404"); // Render the 404 view for unknown routes
 });
 
+// Start the application server
 app.listen(port, () => {
   console.log("Node application listening on port " + port);
 });

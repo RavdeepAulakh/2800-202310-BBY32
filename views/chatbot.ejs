@@ -1,3 +1,4 @@
+<!-- Include the "header" template -->
 <%- include("templates/header") %>
 <body>
     <div class="max-w-md mx-auto bg-gray-200 rounded-lg p-4 mt-16 flex flex-col items-center option"> <!-- Added 'mt-16' class for top margin -->
@@ -10,13 +11,15 @@
       </div>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
+    // Get DOM elements
     const chatContainer = document.getElementById('chat-container');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
 
+    // Append initial message from assistant
     appendMessage('assistant', 'Tell me about what you look for in a car.');
 
-
+    // Event listener for message form submission
     messageForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const message = messageInput.value.trim();
@@ -35,6 +38,7 @@
       }
     });
 
+    // Function to append a message to the chat container
     function appendMessage(role, content) {
       const messageElement = document.createElement('div');
       messageElement.classList.add('rounded', 'p-2');

@@ -1,0 +1,1 @@
+This code is for the flask API server. Host the site seprately and add the URL/predict to the .env

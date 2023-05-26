@@ -147,7 +147,7 @@ These steps will help you get started using the web app:
 
 ## Credits and References
 
-Dataset: https://www.kaggle.com/datasets/austinreese/craigslist-carstrucks-data
+Dataset: https://www.kaggle.com/datasets/austinreese/craigslist-carstrucks-data \
 Logos: https://github.com/filippofilip95/car-logos-dataset
 
 ## How we used AI
